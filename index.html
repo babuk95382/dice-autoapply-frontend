@@ -4264,6 +4264,7 @@ async function candidateLogin() {
     const res  = await apiPost('/api/auth/candidate/login', { email, password: pass });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
+    await _initCsrfToken();
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -4455,6 +4456,7 @@ async function recruiterLogin() {
     const res  = await apiPost('/api/auth/recruiter/login', { email, password: pass });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
+    await _initCsrfToken();
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
@@ -4620,6 +4622,7 @@ async function adminLogin() {
     const res  = await apiPost('/api/auth/admin/login', { email, password: pass });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid credentials'), 'err'); return; }
+    await _initCsrfToken();
     authState.admin.loggedIn = true;
     document.getElementById('a-auth-login').style.display = 'none';
     document.getElementById('a-dashboard').style.display  = '';
@@ -4639,7 +4642,7 @@ async function adminLogin() {
     if (liveSection) liveSection.style.display = '';
     setTimeout(async () => {
       const sbRes = await fetch(API_BASE + '/api/supabase/status', { credentials: 'include',
-        headers: { 'X-CSRF-Token': getCookie('csrf_token') } });
+        headers: { 'X-CSRF-Token': getCsrfToken() } });
       const sbData = sbRes.ok ? await sbRes.json() : {};
       const resEl = document.getElementById('a-search-results');
       if (!sbData.configured) {
@@ -4697,7 +4700,7 @@ async function loadAdminSettings() {
     const res = await fetch(API_BASE + '/api/admin/settings', {
     credentials: "include",
     headers: {
-        "X-CSRF-Token": getCookie("csrf_token")
+        "X-CSRF-Token": getCsrfToken()
     }
 });
     const data = await res.json();
@@ -4714,7 +4717,7 @@ async function loadAdminDashboard() {
     const res = await fetch(API_BASE + '/api/admin/dashboard', {
     credentials: "include",
     headers: {
-        "X-CSRF-Token": getCookie("csrf_token")
+        "X-CSRF-Token": getCsrfToken()
     }
 });
     if (!res.ok) return;
@@ -4777,7 +4780,7 @@ async function loadRazorpaySettings() {
   try {
     const res  = await fetch(API_BASE + '/api/admin/payment-settings', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') }
+      headers: { 'X-CSRF-Token': getCsrfToken() }
     });
     const data = await res.json();
     if (!res.ok) {
@@ -4909,7 +4912,7 @@ async function checkSupabaseStatus() {
   try {
     const res = await fetch(API_BASE + '/api/supabase/status', {
       credentials: "include",
-      headers: { "X-CSRF-Token": getCookie("csrf_token") }
+      headers: { "X-CSRF-Token": getCsrfToken() }
     });
     const d     = await res.json();
     const badge = document.getElementById('sb-badge');
@@ -5164,7 +5167,7 @@ async function loadCandidateDetailsFromDB(userId) {
   try {
     const res  = await fetch(`${API_BASE}/api/candidate/details`, {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (res.ok && data.found && data.details) {
@@ -5386,7 +5389,7 @@ async function _tryRefreshToken() {
     const r = await fetch(API_BASE + '/api/auth/refresh', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') }
+      headers: { 'X-CSRF-Token': getCsrfToken() }
     });
     const ok = r.ok;
     _refreshQueue.forEach(resolve => resolve(ok));
@@ -5403,7 +5406,7 @@ async function _tryRefreshToken() {
 
 async function apiFetch(url, opts = {}, _retry = true) {
   const res = await fetch(API_BASE + url, { credentials: 'include', ...opts,
-    headers: { 'X-CSRF-Token': getCookie('csrf_token'), ...(opts.headers || {}) }
+    headers: { 'X-CSRF-Token': getCsrfToken(), ...(opts.headers || {}) }
   });
   if (res.status === 401 && _retry) {
     const refreshed = await _tryRefreshToken();
@@ -5659,7 +5662,7 @@ async function stopJob() {
     }
   });
   // Notify server (non-blocking)
-  try { await fetch(`${API_BASE}/api/stop/${currentJobId}`, { method: 'POST', headers: { 'X-CSRF-Token': getCookie('csrf_token') }, credentials: 'include' }); } catch(e) {}
+  try { await fetch(`${API_BASE}/api/stop/${currentJobId}`, { method: 'POST', headers: { 'X-CSRF-Token': getCsrfToken() }, credentials: 'include' }); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5673,7 +5676,7 @@ function startRecruiterPolling(jobId) {
     try {
       const res  = await fetch(`${API_BASE}/api/job/stats/${jobId}`, {
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+        headers: { 'X-CSRF-Token': getCsrfToken() },
       });
       if (!res.ok) {
         // 404 = job gone (server reloaded) — stop polling cleanly
@@ -5850,7 +5853,7 @@ async function loadRecruiterCandidates() {
   try {
     const res  = await fetch(`${API_BASE}/api/recruiter/candidates`, {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (!res.ok || !data.ok) { renderRcTable(); return; }
@@ -6028,7 +6031,7 @@ async function saveRcCandidate() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': getCookie('csrf_token'),
+          'X-CSRF-Token': getCsrfToken(),
         },
         credentials: 'include',
         body: JSON.stringify(body),
@@ -6088,7 +6091,7 @@ async function deleteRcCandidate(id) {
   try {
     const res = await fetch(`${API_BASE}/api/recruiter/candidates/${id}`, {
       method: 'DELETE',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
       credentials: 'include',
     });
     if (res.ok) {
@@ -6231,7 +6234,7 @@ async function loadRecruiterReport() {
   try {
     const res  = await fetch(url, {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
@@ -6429,7 +6432,7 @@ function startAdminDashboardPolling() {
     try {
       const res = await fetch(API_BASE + '/api/admin/dashboard', {
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+        headers: { 'X-CSRF-Token': getCsrfToken() },
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -6451,7 +6454,7 @@ async function showHistory() {
   try {
     const res = await fetch(API_BASE + '/api/runs', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     if (!res.ok) { const d = await res.json(); body.innerHTML = `<div style="color:var(--red);padding:12px">${escHtml(d.error||'Failed')}</div>`; return; }
     const { runs } = await res.json();
@@ -6500,7 +6503,7 @@ function startBackgroundPolling() {
     try {
       const res  = await fetch(API_BASE + '/api/live/dashboard', {
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+        headers: { 'X-CSRF-Token': getCsrfToken() },
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -6883,12 +6886,35 @@ function getCookie(name) {
     return "";
 }
 
+// ── CSRF token fetched from backend (cross-origin safe) ──
+let _csrfToken = "";
+
+async function _initCsrfToken() {
+  try {
+    const res = await fetch(API_BASE + '/api/csrf', {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (data && data.csrf_token) {
+      _csrfToken = data.csrf_token;
+    }
+  } catch(e) {
+    console.warn('Could not fetch CSRF token', e);
+  }
+}
+
+function getCsrfToken() {
+  // Prefer JS variable (cross-origin), fall back to cookie
+  return _csrfToken || getCsrfToken();
+}
+
 
 // ═══════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════
 window.addEventListener('load', () => {
   initTheme();
+  _initCsrfToken();
   startBackgroundPolling();
 });
 
@@ -6901,7 +6927,7 @@ async function _resolveUserId(email, userType) {
   try {
     const res = await fetch(`${API_BASE}/api/admin/search?q=${encodeURIComponent(email)}`, {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (!res.ok || !data.ok) return null;
@@ -7014,7 +7040,7 @@ async function loadEmailSettings() {
   try {
     const res  = await fetch(API_BASE + '/api/admin/email-settings', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
@@ -7119,7 +7145,7 @@ async function loadEmailTemplates() {
   try {
     const res  = await fetch(API_BASE + '/api/admin/email-templates', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCookie('csrf_token') },
+      headers: { 'X-CSRF-Token': getCsrfToken() },
     });
     const data = await res.json();
     if (!res.ok || !data.ok) return;
