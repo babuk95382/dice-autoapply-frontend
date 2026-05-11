@@ -4090,6 +4090,9 @@ select,
 //  Dice passwords stored encrypted server-side via Fernet.
 // ═══════════════════════════════════════════════════════
 
+// ── Backend API base URL ──────────────────────────────
+const API_BASE = "https://api.futurehiretech.com";
+
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
@@ -4635,7 +4638,7 @@ async function adminLogin() {
     const liveSection = document.getElementById('tab-content-live');
     if (liveSection) liveSection.style.display = '';
     setTimeout(async () => {
-      const sbRes = await fetch('/api/supabase/status', { credentials: 'same-origin',
+      const sbRes = await fetch(API_BASE + '/api/supabase/status', { credentials: 'include',
         headers: { 'X-CSRF-Token': getCookie('csrf_token') } });
       const sbData = sbRes.ok ? await sbRes.json() : {};
       const resEl = document.getElementById('a-search-results');
@@ -4691,7 +4694,7 @@ async function saveAutomationSettings() {
 
 async function loadAdminSettings() {
   try {
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetch(API_BASE + '/api/admin/settings', {
     credentials: "include",
     headers: {
         "X-CSRF-Token": getCookie("csrf_token")
@@ -4708,7 +4711,7 @@ async function loadAdminSettings() {
 
 async function loadAdminDashboard() {
   try {
-    const res = await fetch('/api/admin/dashboard', {
+    const res = await fetch(API_BASE + '/api/admin/dashboard', {
     credentials: "include",
     headers: {
         "X-CSRF-Token": getCookie("csrf_token")
@@ -4772,7 +4775,7 @@ async function loadRazorpaySettings() {
   if (icon) icon.textContent = '⏳';
   if (text) text.textContent = 'Checking Razorpay configuration…';
   try {
-    const res  = await fetch('/api/admin/payment-settings', {
+    const res  = await fetch(API_BASE + '/api/admin/payment-settings', {
       credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') }
     });
@@ -4904,7 +4907,7 @@ function toggleRzpSecretVisibility() {
 
 async function checkSupabaseStatus() {
   try {
-    const res = await fetch('/api/supabase/status', {
+    const res = await fetch(API_BASE + '/api/supabase/status', {
       credentials: "include",
       headers: { "X-CSRF-Token": getCookie("csrf_token") }
     });
@@ -5159,8 +5162,8 @@ function _updateLockedEmailDisplay(lockedEmail) {
 async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
   try {
-    const res  = await fetch(`/api/candidate/details`, {
-      credentials: 'same-origin',
+    const res  = await fetch(`${API_BASE}/api/candidate/details`, {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
@@ -5380,9 +5383,9 @@ async function _tryRefreshToken() {
   }
   _refreshing = true;
   try {
-    const r = await fetch('/api/auth/refresh', {
+    const r = await fetch(API_BASE + '/api/auth/refresh', {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') }
     });
     const ok = r.ok;
@@ -5399,7 +5402,7 @@ async function _tryRefreshToken() {
 }
 
 async function apiFetch(url, opts = {}, _retry = true) {
-  const res = await fetch(url, { credentials: 'same-origin', ...opts,
+  const res = await fetch(API_BASE + url, { credentials: 'include', ...opts,
     headers: { 'X-CSRF-Token': getCookie('csrf_token'), ...(opts.headers || {}) }
   });
   if (res.status === 401 && _retry) {
@@ -5656,7 +5659,7 @@ async function stopJob() {
     }
   });
   // Notify server (non-blocking)
-  try { await fetch(`/api/stop/${currentJobId}`, { method: 'POST', headers: { 'X-CSRF-Token': getCookie('csrf_token') }, credentials: 'same-origin' }); } catch(e) {}
+  try { await fetch(`${API_BASE}/api/stop/${currentJobId}`, { method: 'POST', headers: { 'X-CSRF-Token': getCookie('csrf_token') }, credentials: 'include' }); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5668,8 +5671,8 @@ function startRecruiterPolling(jobId) {
   stopRecruiterPolling();
   _recruiterPollTimer = setInterval(async () => {
     try {
-      const res  = await fetch(`/api/job/stats/${jobId}`, {
-        credentials: 'same-origin',
+      const res  = await fetch(`${API_BASE}/api/job/stats/${jobId}`, {
+        credentials: 'include',
         headers: { 'X-CSRF-Token': getCookie('csrf_token') },
       });
       if (!res.ok) {
@@ -5845,8 +5848,8 @@ async function loadRecruiterCandidates() {
   const tbody = document.getElementById('rc-saved-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="rc-empty"><div class="skeleton-line skeleton" style="width:60%;margin:0 auto 8px"></div><div class="skeleton-line skeleton" style="width:40%;margin:0 auto"></div></td></tr>';
   try {
-    const res  = await fetch(`/api/recruiter/candidates`, {
-      credentials: 'same-origin',
+    const res  = await fetch(`${API_BASE}/api/recruiter/candidates`, {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
@@ -6021,13 +6024,13 @@ async function saveRcCandidate() {
   try {
     let res;
     if (rcEditingId) {
-      res = await fetch(`/api/recruiter/candidates/${rcEditingId}`, {
+      res = await fetch(`${API_BASE}/api/recruiter/candidates/${rcEditingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': getCookie('csrf_token'),
         },
-        credentials: 'same-origin',
+        credentials: 'include',
         body: JSON.stringify(body),
       });
     } else {
@@ -6083,10 +6086,10 @@ async function deleteRcCandidate(id) {
   const user = authState.recruiter.user;
   if (!user) return;
   try {
-    const res = await fetch(`/api/recruiter/candidates/${id}`, {
+    const res = await fetch(`${API_BASE}/api/recruiter/candidates/${id}`, {
       method: 'DELETE',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
-      credentials: 'same-origin',
+      credentials: 'include',
     });
     if (res.ok) {
       rcSelectedIds.delete(id);
@@ -6136,7 +6139,7 @@ async function runAdminSearch() {
     let url = `/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo)   url += `&date_to=${encodeURIComponent(dateTo)}`;
-    const res  = await apiFetch(url, { credentials: 'same-origin' });
+    const res  = await apiFetch(url, { credentials: 'include' });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       const errMsg = d.error || 'Search failed';
@@ -6227,7 +6230,7 @@ async function loadRecruiterReport() {
   }
   try {
     const res  = await fetch(url, {
-      credentials: 'same-origin',
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
@@ -6424,8 +6427,8 @@ function startAdminDashboardPolling() {
   _adminDashPollTimer = setInterval(async () => {
     if (!authState.admin.loggedIn) return;
     try {
-      const res = await fetch('/api/admin/dashboard', {
-        credentials: 'same-origin',
+      const res = await fetch(API_BASE + '/api/admin/dashboard', {
+        credentials: 'include',
         headers: { 'X-CSRF-Token': getCookie('csrf_token') },
       });
       if (!res.ok) return;
@@ -6446,8 +6449,8 @@ async function showHistory() {
   modal.style.display = 'block';
   body.innerHTML = '<div style="color:var(--text3);font-family:\'DM Mono\',monospace;font-size:13px;padding:20px 0">Loading…</div>';
   try {
-    const res = await fetch('/api/runs', {
-      credentials: 'same-origin',
+    const res = await fetch(API_BASE + '/api/runs', {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     if (!res.ok) { const d = await res.json(); body.innerHTML = `<div style="color:var(--red);padding:12px">${escHtml(d.error||'Failed')}</div>`; return; }
@@ -6495,8 +6498,8 @@ function startBackgroundPolling() {
     const loggedIn = authState.admin.loggedIn || authState.candidate.loggedIn || authState.recruiter.loggedIn;
     if (!loggedIn) return;
     try {
-      const res  = await fetch('/api/live/dashboard', {
-        credentials: 'same-origin',
+      const res  = await fetch(API_BASE + '/api/live/dashboard', {
+        credentials: 'include',
         headers: { 'X-CSRF-Token': getCookie('csrf_token') },
       });
       if (!res.ok) return;
@@ -6896,8 +6899,8 @@ window.addEventListener('load', () => {
 async function _resolveUserId(email, userType) {
   // Search for the user by email via admin search
   try {
-    const res = await fetch(`/api/admin/search?q=${encodeURIComponent(email)}`, {
-      credentials: 'same-origin',
+    const res = await fetch(`${API_BASE}/api/admin/search?q=${encodeURIComponent(email)}`, {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
@@ -7009,8 +7012,8 @@ async function loadEmailSettings() {
   if (icon) icon.textContent = '⏳';
   if (text) text.textContent = 'Checking email configuration…';
   try {
-    const res  = await fetch('/api/admin/email-settings', {
-      credentials: 'same-origin',
+    const res  = await fetch(API_BASE + '/api/admin/email-settings', {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
@@ -7114,8 +7117,8 @@ let _emailTemplates = [];
 
 async function loadEmailTemplates() {
   try {
-    const res  = await fetch('/api/admin/email-templates', {
-      credentials: 'same-origin',
+    const res  = await fetch(API_BASE + '/api/admin/email-templates', {
+      credentials: 'include',
       headers: { 'X-CSRF-Token': getCookie('csrf_token') },
     });
     const data = await res.json();
