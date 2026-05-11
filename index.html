@@ -5405,6 +5405,11 @@ async function _tryRefreshToken() {
 }
 
 async function apiFetch(url, opts = {}, _retry = true) {
+  // Always fetch a fresh CSRF token before any mutating request
+  const method = (opts.method || 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    await _initCsrfToken();
+  }
   const res = await fetch(API_BASE + url, { credentials: 'include', ...opts,
     headers: { 'X-CSRF-Token': getCsrfToken(), ...(opts.headers || {}) }
   });
@@ -6904,8 +6909,8 @@ async function _initCsrfToken() {
 }
 
 function getCsrfToken() {
-  // Prefer JS variable (cross-origin), fall back to cookie
-  return _csrfToken || getCsrfToken();
+  // Return stored token (set by _initCsrfToken), fall back to cookie
+  return _csrfToken || getCookie('csrf_token');
 }
 
 
