@@ -1171,6 +1171,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0;}
   margin-bottom:28px;
 }
 @media(max-width:640px){ .sub-plans-v2{grid-template-columns:1fr;} }
+@media(max-width:900px) and (min-width:641px){ .sub-plans-v2[style*="repeat(3"]{grid-template-columns:1fr 1fr !important;} }
 
 /* ── Plan card v2 ── */
 .plan-card-v2 {
@@ -3159,8 +3160,32 @@ select,
           </div>
         </div>
 
-        <!-- Plan cards — 2 col -->
-        <div class="sub-plans-v2">
+        <!-- Plan cards — 3 col -->
+        <div class="sub-plans-v2" style="grid-template-columns:repeat(3,1fr);">
+
+          <!-- Recruiter Free Trial -->
+          <div class="plan-card-v2" id="r-trial-card">
+            <div class="plan-card-icon">🆓</div>
+            <div class="plan-name-v2">Free Trial</div>
+            <div class="plan-price-row">
+              <span class="plan-price-currency">₹</span>
+              <span class="plan-price-amount">0</span>
+              <span class="plan-price-period">/ 3 days</span>
+            </div>
+            <div class="plan-desc-v2">Try the full recruiter platform risk-free</div>
+            <ul class="plan-features-v2">
+              <li><span class="plan-feat-check">✓</span>3-day platform access</li>
+              <li><span class="plan-feat-check">✓</span>Up to 10 candidates</li>
+              <li><span class="plan-feat-check">✓</span>Parallel bulk automation</li>
+              <li><span class="plan-feat-check">✓</span>Live run dashboard</li>
+              <li><span class="plan-feat-x">✗</span><span style="color:var(--text3)">Date-wise reports &amp; CSV</span></li>
+              <li><span class="plan-feat-x">✗</span><span style="color:var(--text3)">Priority support</span></li>
+            </ul>
+            <button class="plan-btn-v2 plan-btn-outline" id="r-trial-btn" onclick="activateRecruiterPlan('recruiter_trial')">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg>
+              Start Free Trial
+            </button>
+          </div>
 
           <!-- Recruiter Monthly — Most Popular -->
           <div class="plan-card-v2 plan-featured">
@@ -3221,20 +3246,22 @@ select,
           <thead>
             <tr>
               <th style="text-align:left">Feature</th>
+              <th>Free Trial</th>
               <th class="col-highlight">Monthly ₹999</th>
               <th class="col-purple">Yearly ₹7,999</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Access duration</td><td>30 days</td><td><span class="cmp-val">365 days</span></td></tr>
-            <tr><td>Candidates</td><td>Up to 10</td><td>Up to 10</td></tr>
-            <tr><td>Parallel automation</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Date-wise reports</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>CSV export</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Priority support</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Dedicated account support</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Early feature access</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Effective monthly cost</td><td>₹999</td><td><span class="cmp-val">₹2,083</span></td></tr>
+            <tr><td>Access duration</td><td>3 days</td><td>30 days</td><td><span class="cmp-val">365 days</span></td></tr>
+            <tr><td>Candidates</td><td>Up to 10</td><td>Up to 10</td><td>Up to 10</td></tr>
+            <tr><td>Parallel automation</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Live run dashboard</td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Date-wise reports</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>CSV export</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Priority support</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Dedicated account support</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Early feature access</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
+            <tr><td>Cost</td><td><span class="cmp-val">Free</span></td><td>₹999/mo</td><td><span class="cmp-val">₹2,083/mo</span></td></tr>
           </tbody>
         </table>
 
@@ -4525,19 +4552,20 @@ async function activateRecruiterPlan(plan) {
   if (!user) return;
 
   // Button loading
-  const btnMap = { recruiter_monthly: 'r-monthly-btn', recruiter_yearly: 'r-yearly-btn', trial: null, pro: 'r-monthly-btn' };
+  const btnMap = { recruiter_monthly: 'r-monthly-btn', recruiter_yearly: 'r-yearly-btn', recruiter_trial: 'r-trial-btn', trial: null, pro: 'r-monthly-btn' };
   const btnId  = btnMap[plan];
   const btn    = btnId ? document.getElementById(btnId) : null;
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Processing…'; }
 
-  if (plan === 'trial') {
+  if (plan === 'trial' || plan === 'recruiter_trial') {
     try {
-      const res  = await apiPost('/api/subscription/create-order', { plan:'trial' });
+      const res  = await apiPost('/api/subscription/create-order', { plan: plan });
       const data = await res.json();
       if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); return; }
-      toast('✅ Trial activated!', 'ok');
+      toast('✅ Free trial activated!', 'ok');
       showRecruiterView('setup');
     } catch(e) { toast('Network error', 'err'); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
   } else {
     await openRazorpay('recruiter', plan, user);
     if (btn) {
@@ -4554,6 +4582,7 @@ function _applyRecruiterSubscription(sub) {
   const planLabels = {
     recruiter_monthly: 'Recruiter Monthly',
     recruiter_yearly:  'Recruiter Yearly',
+    recruiter_trial:   'Recruiter Free Trial',
     trial:             'Free Trial',
     pro:               'Recruiter Pro',
   };
@@ -4576,7 +4605,11 @@ function _applyRecruiterSubscription(sub) {
     if (subCard)    subCard.style.display    = '';
     if (nameEl)  nameEl.textContent  = label;
     if (daysEl)  daysEl.textContent  = days;
-    if (badgeEl) { badgeEl.textContent = 'Active'; badgeEl.className = 'sub-badge active'; }
+    const isTrial = sub.plan === 'recruiter_trial' || sub.plan === 'trial';
+    if (badgeEl) { badgeEl.textContent = isTrial ? 'Trial' : 'Active'; badgeEl.className = isTrial ? 'sub-badge trial' : 'sub-badge active'; }
+    // Hide the free trial card if already on trial or paid plan
+    const trialCard = document.getElementById('r-trial-card');
+    if (trialCard) trialCard.style.display = 'none';
     if (expiryEl) {
       if (sub.expires_at) {
         const d = new Date(sub.expires_at);
