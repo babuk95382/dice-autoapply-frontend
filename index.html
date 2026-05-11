@@ -5594,7 +5594,14 @@ async function startJob(jobMode) {
 
   // Start SSE log stream
   if (evtSource) evtSource.close();
-  evtSource = new EventSource(`/api/logs/${currentJobId}`);
+  // EventSource cannot send cookies cross-origin — fetch token first
+  let sseToken = '';
+  try {
+    const tokenRes = await apiFetch('/api/auth/token');
+    const tokenData = await tokenRes.json();
+    if (tokenData.ok) sseToken = tokenData.token;
+  } catch(e) {}
+  evtSource = new EventSource(`${API_BASE}/api/logs/${currentJobId}${sseToken ? '?token=' + encodeURIComponent(sseToken) : ''}`);
   evtSource.onmessage = (e) => {
     let msg;
     try { msg = JSON.parse(e.data); } catch(_) { return; }
@@ -6144,7 +6151,7 @@ async function runAdminSearch() {
   if (!resEl) return;
   resEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Searching…</div>';
   try {
-    let url = `/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
+    let url = `${API_BASE}/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo)   url += `&date_to=${encodeURIComponent(dateTo)}`;
     const res  = await apiFetch(url, { credentials: 'include' });
@@ -6229,7 +6236,7 @@ async function loadRecruiterReport() {
   const wrap = document.getElementById('r-date-report-wrap');
   if (!wrap) return;
   wrap.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Loading…</div>';
-  let url = `/api/recruiter/reports?period=${_reportPeriod}`;
+  let url = `${API_BASE}/api/recruiter/reports?period=${_reportPeriod}`;
   if (_reportPeriod === 'custom') {
     const df = document.getElementById('rpt-date-from')?.value;
     const dt = document.getElementById('rpt-date-to')?.value;
@@ -6331,7 +6338,7 @@ function stopLiveDashboardPolling() {
 
 async function pollLiveDashboard() {
   try {
-    let url = '/api/live/dashboard';
+    let url = `${API_BASE}/api/live/dashboard`;
     const uid   = authState.candidate?.user?.id || authState.recruiter?.user?.id || '';
     const utype = authState.candidate?.loggedIn ? 'candidate' : authState.recruiter?.loggedIn ? 'recruiter' : '';
     if (uid && utype) url += `?user_id=${encodeURIComponent(uid)}&user_type=${utype}`;
