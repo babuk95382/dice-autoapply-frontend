@@ -4444,6 +4444,7 @@ function _applyCandidateSubscription(sub) {
 function candidateLogout() {
   authState.candidate = { loggedIn: false, user: null, plan: null };
   selfTags = [];
+  _selfDicePassword = '';   // clear in-memory password on logout
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
   stopRecruiterPolling();
@@ -5155,7 +5156,10 @@ async function saveCandidateDetails() {
     employment:  document.getElementById('s-etype').value,
     easy_apply:  document.getElementById('s-easy').value === 'true',
   };
-  if (pass) payload.dice_password = pass;
+  if (pass) {
+    payload.dice_password = pass;
+    _selfDicePassword = pass;   // keep in-memory copy in sync
+  }
 
   try {
     const res = await apiPost('/api/candidate/details', payload);
@@ -5202,6 +5206,10 @@ function _updateLockedEmailDisplay(lockedEmail) {
   }
 }
 
+// In-memory Dice password — restored from DB on login/load so
+// the user never has to re-enter it after a page refresh or re-login.
+let _selfDicePassword = '';
+
 async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
   try {
@@ -5216,7 +5224,13 @@ async function loadCandidateDetailsFromDB(userId) {
         document.getElementById('s-email').value = d.dice_email;
         _updateLockedEmailDisplay(d.dice_email);
       }
-      if (d.has_password) {
+      // Restore password from DB into memory so startJob can use it
+      // without requiring the user to type it again.
+      if (d.dice_password) {
+        _selfDicePassword = d.dice_password;
+        const hint = document.getElementById('s-pass-hint');
+        if (hint) hint.style.display = '';
+      } else if (d.has_password) {
         const hint = document.getElementById('s-pass-hint');
         if (hint) hint.style.display = '';
       }
@@ -5484,7 +5498,9 @@ async function startJob(jobMode) {
 
   if (jobMode === 'self') {
     const email = document.getElementById('s-email').value.trim();
-    const pass  = document.getElementById('s-pass').value.trim();
+    // Use typed password if provided, otherwise use the in-memory value
+    // restored from DB — so automation starts without re-entering the password.
+    const pass  = document.getElementById('s-pass').value.trim() || _selfDicePassword;
     if (!email || !pass) {
       toast('Enter your Dice email and password to start.', 'err');
       return;
