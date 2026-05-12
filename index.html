@@ -2645,11 +2645,11 @@ select,
             <div class="auth-sub">Sign in to your account to continue</div>
           </div>
           <div class="auth-form">
-            <div class="field"><label>Email</label><input id="c-login-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+            <div class="field"><label>Email</label><input id="c-login-email" type="text" placeholder="you@email.com" autocomplete="off" data-lpignore="true"></div>
             <div class="field">
               <label>Password</label>
               <div class="pw-wrap">
-                <input id="c-login-pass" type="password" placeholder="••••••••" autocomplete="off">
+                <input id="c-login-pass" type="password" placeholder="••••••••" autocomplete="off" data-lpignore="true">
                 <button type="button" class="pw-toggle" onclick="togglePw('c-login-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
               </div>
             </div>
@@ -3076,11 +3076,11 @@ select,
             <div class="auth-sub">Manage multiple candidates from one place</div>
           </div>
           <div class="auth-form">
-            <div class="field"><label>Email</label><input id="r-login-email" type="email" placeholder="recruiter@company.com" autocomplete="email"></div>
+            <div class="field"><label>Email</label><input id="r-login-email" type="text" placeholder="recruiter@company.com" autocomplete="off" data-lpignore="true"></div>
             <div class="field">
               <label>Password</label>
               <div class="pw-wrap">
-                <input id="r-login-pass" type="password" placeholder="••••••••" autocomplete="off">
+                <input id="r-login-pass" type="password" placeholder="••••••••" autocomplete="off" data-lpignore="true">
                 <button type="button" class="pw-toggle" onclick="togglePw('r-login-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
               </div>
             </div>
@@ -3532,11 +3532,11 @@ select,
             <div class="auth-sub">Restricted access — administrators only</div>
           </div>
           <div class="auth-form">
-            <div class="field"><label>Admin Email</label><input id="a-login-email" type="email" placeholder="admin@company.com" autocomplete="email"></div>
+            <div class="field"><label>Admin Email</label><input id="a-login-email" type="text" placeholder="admin@company.com" autocomplete="off" data-lpignore="true"></div>
             <div class="field">
               <label>Password</label>
               <div class="pw-wrap">
-                <input id="a-login-pass" type="password" placeholder="••••••••" autocomplete="off">
+                <input id="a-login-pass" type="password" placeholder="••••••••" autocomplete="off" data-lpignore="true">
                 <button type="button" class="pw-toggle" onclick="togglePw('a-login-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
               </div>
             </div>
@@ -4440,6 +4440,9 @@ function candidateLogout() {
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
   stopRecruiterPolling();
+  // Stop candidate dashboard polling and clear saved dice password
+  if (typeof stopCandidateDashboardPolling === 'function') stopCandidateDashboardPolling();
+  if (typeof _clearSelfDicePassword === 'function') _clearSelfDicePassword();
   hideSidebar();
   unlockRole();
   showCandidateView('login');
@@ -4688,7 +4691,7 @@ async function adminLogin() {
       } else {
         runAdminSearch();
       }
-    }, 800);
+    }, 100); // reduced from 800ms for near-instant search load
     checkSupabaseStatus();
   } catch(e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
@@ -5203,35 +5206,7 @@ function _updateLockedEmailDisplay(lockedEmail) {
   }
 }
 
-async function loadCandidateDetailsFromDB(userId) {
-  if (!userId) return;
-  try {
-    const res  = await fetch(`${API_BASE}/api/candidate/details`, {
-      credentials: 'include',
-      headers: { 'X-CSRF-Token': getCsrfToken() },
-    });
-    const data = await res.json();
-    if (res.ok && data.found && data.details) {
-      const d = data.details;
-      if (d.dice_email) {
-        document.getElementById('s-email').value = d.dice_email;
-        _updateLockedEmailDisplay(d.dice_email);
-      }
-      if (d.has_password) {
-        const hint = document.getElementById('s-pass-hint');
-        if (hint) hint.style.display = '';
-      }
-      if (d.searches && d.searches.length) { selfTags = d.searches; renderSelfTags(); }
-      if (d.max_pages)  document.getElementById('s-pages').value = d.max_pages;
-      if (d.max_jobs)   document.getElementById('s-jobs').value  = d.max_jobs;
-      if (d.date_filter) document.getElementById('s-date').value = d.date_filter;
-      if (d.employment)  document.getElementById('s-etype').value = d.employment;
-      if (d.easy_apply !== undefined) document.getElementById('s-easy').value = d.easy_apply ? 'true' : 'false';
-      showSavedBar(true);
-      toggleCandidateEditMode(false);
-    }
-  } catch(e) {}
-}
+// loadCandidateDetailsFromDB: see patch block at bottom (with password hint update)
 
 // ═══════════════════════════════════════════════════════
 //  SELF TAGS (Candidate job search tags)
@@ -6173,90 +6148,9 @@ function debounceAdminSearch() {
   clearTimeout(_adminSearchDebounce);
   _adminSearchDebounce = setTimeout(runAdminSearch, 500);
 }
-function setAdminSubFilter(val) {
-  _adminSubFilter = val;
-  ['all','active','expired'].forEach(k => {
-    document.getElementById(`afl-${k}`)?.classList.toggle('active', val === '' ? k === 'all' : k === val);
-  });
-  runAdminSearch();
-}
-function clearAdminSearch() {
-  document.getElementById('a-search-input').value = '';
-  document.getElementById('afl-date-from').value  = '';
-  document.getElementById('afl-date-to').value    = '';
-  _adminSubFilter = '';
-  setAdminSubFilter('');
-}
+// ── setAdminSubFilter, clearAdminSearch, runAdminSearch: see patch block below ──
 
-async function runAdminSearch() {
-  const q        = (document.getElementById('a-search-input')?.value || '').trim();
-  const dateFrom = document.getElementById('afl-date-from')?.value || '';
-  const dateTo   = document.getElementById('afl-date-to')?.value   || '';
-  const resEl    = document.getElementById('a-search-results');
-  if (!resEl) return;
-  resEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Searching…</div>';
-  try {
-    let url = `${API_BASE}/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
-    if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
-    if (dateTo)   url += `&date_to=${encodeURIComponent(dateTo)}`;
-    const res  = await apiFetch(url, { credentials: 'include' });
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      const errMsg = d.error || 'Search failed';
-      if (errMsg.toLowerCase().includes('supabase') || res.status === 503) {
-        resEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0">
-          <div style="font-size:28px">🔌</div>
-          <div style="color:var(--text3);font-size:13px;font-weight:600">Supabase Not Connected</div>
-          <div style="color:var(--text3);font-size:11px;text-align:center;max-width:320px">Connect your Supabase database in the <strong style="color:var(--accent)">Supabase Configuration</strong> section below to view and search users.</div>
-          <button class="btn-add" style="padding:8px 20px;font-size:12px" onclick="document.getElementById('admin-section-security').scrollIntoView({behavior:'smooth'})">🔗 Go to Supabase Config</button>
-        </div>`;
-      } else {
-        resEl.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px">${escHtml(errMsg)}</div>`;
-      }
-      return;
-    }
-    const data    = await res.json();
-    const results = data.results || [];
-    if (results.length === 0) {
-      resEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0;text-align:center">No results found.</div>';
-      return;
-    }
-    resEl.innerHTML = `
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${results.length} result${results.length !== 1 ? 's' : ''} found</div>
-      ${results.map(r => {
-        const subCls   = r.sub_status === 'active' ? (r.plan === 'trial' ? 'trial' : 'active') : 'expired';
-        const subLabel = r.sub_status === 'active' ? (r.plan === 'trial' ? 'Trial' : 'Pro') : 'Expired';
-        const liveCls  = r.live_status === 'Running' ? 'var(--green)' : r.live_status === 'Done' ? 'var(--accent2)' : r.live_status === 'Stopped' ? 'var(--red)' : 'var(--text3)';
-        const recruiterLine = r.recruiter ? `<span style="color:var(--accent2)"> · via ${escHtml(r.recruiter)}</span>` : '';
-        return `<div class="search-result-card">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-            <div>
-              <div class="src-name">${escHtml(r.name || '—')}</div>
-              <div class="src-meta">${escHtml(r.type)}${recruiterLine}</div>
-              ${r.email      ? `<div class="src-meta">📧 ${escHtml(r.email)}</div>` : ''}
-              ${r.dice_email ? `<div class="src-meta">🎲 Dice: ${escHtml(r.dice_email)}</div>` : ''}
-              <div class="src-meta">🕐 Last active: ${formatDate(r.last_active) || '—'}</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-              <span class="sub-badge ${subCls}">${subLabel}</span>
-              ${r.days_left > 0 ? `<span style="font-size:10px;color:var(--text3)">${r.days_left}d left</span>` : ''}
-              <span style="font-size:11px;font-weight:700;color:${liveCls}">${r.live_status||'Idle'}</span>
-            </div>
-          </div>
-          <div class="src-stats">
-            <div class="src-stat"><div class="src-stat-num" style="color:var(--green)">${r.total_applied||0}</div><div class="src-stat-lbl">Applied</div></div>
-            <div class="src-stat"><div class="src-stat-num" style="color:var(--amber)">${r.already_applied||0}</div><div class="src-stat-lbl">Already</div></div>
-            <div class="src-stat"><div class="src-stat-num" style="color:var(--red)">${r.failed_jobs||0}</div><div class="src-stat-lbl">Failed</div></div>
-            ${r.plan_label ? `<div class="src-stat"><div class="src-stat-num" style="color:var(--accent2);font-size:11px">${escHtml(r.plan_label)}</div><div class="src-stat-lbl">Plan</div></div>` : ''}
-          </div>
-          ${r.live_remarks ? `<div style="margin-top:8px;font-size:11px;color:var(--red);font-family:'DM Mono',monospace;padding:4px 8px;background:var(--red-dim);border-radius:4px">⚠️ ${escHtml(r.live_remarks)}</div>` : ''}
-        </div>`;
-      }).join('')}
-    `;
-  } catch(e) {
-    resEl.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px">Error: ${escHtml(String(e))}</div>`;
-  }
-}
+// runAdminSearch: see patch block at bottom of file (uses apiFetch + proper filters)
 
 /* exportAdminReport replaced below — now calls /api/admin/export/users */
 
@@ -6482,23 +6376,7 @@ async function pollLiveDashboard() {
   } catch(e) {}
 }
 
-function startAdminDashboardPolling() {
-  if (_adminDashPollTimer) return;
-  _adminDashPollTimer = setInterval(async () => {
-    if (!authState.admin.loggedIn) return;
-    try {
-      const res = await fetch(API_BASE + '/api/admin/dashboard', {
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken() },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setStatNum('a-active',        data.active_runners ?? 0);
-      setStatNum('a-total-users',   data.total_users    ?? 0);
-      setStatNum('a-total-applied', data.jobs_today     ?? 0);
-    } catch(e) {}
-  }, 8000);
-}
+// startAdminDashboardPolling: see patch block at bottom (full refresh every 5s)
 
 // ═══════════════════════════════════════════════════════
 //  HISTORY MODAL
@@ -7404,7 +7282,7 @@ function startAdminDashboardPolling() {
 }
 
 // Recruiter dashboard live polling — refresh candidate table & stats
-let _recruiterPollTimer = null;
+_recruiterPollTimer = null; // (timer re-initialized here)
 function startRecruiterDashboardPolling() {
   if (_recruiterPollTimer) return;
   _recruiterPollTimer = setInterval(async () => {
@@ -7495,50 +7373,8 @@ async function startJob(jobMode) {
 // Override the delayed admin search trigger in adminLogin
 // so search runs immediately after login
 const _origAdminLoginFn = adminLogin;
-async function adminLogin() {
-  // Save reference to original to avoid infinite recursion
-  // (already called _origAdminLogin above, re-define here)
-  const email = document.getElementById('a-login-email').value.trim();
-  const pass  = document.getElementById('a-login-pass').value.trim();
-  const msg   = document.getElementById('a-login-msg');
-  if (!email || !pass) { showMsg(msg, 'Please enter credentials.', 'err'); return; }
-  setBtnLoading('a-login-btn', true, 'Verifying…');
-  showMsg(msg, 'Verifying…', 'info');
-  try {
-    const res  = await fetch(API_BASE + '/api/auth/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-      credentials: 'include',
-      body: JSON.stringify({ email, password: pass }),
-    });
-    const data = await res.json();
-    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid credentials'), 'err'); return; }
-    await _initCsrfToken();
-    authState.admin.loggedIn = true;
-    document.getElementById('a-auth-login').style.display = 'none';
-    document.getElementById('a-dashboard').style.display  = '';
-    document.getElementById('panel-right-logs').style.display = '';
-    document.getElementById('app-root').classList.remove('no-sidebar');
-    renderSidebar('admin');
-    sidebarSetActive('overview', false);
-    lockToRole('admin');
-    loadAdminSettings();
-    loadRazorpaySettings();
-    loadEmailSettings();
-    loadEmailTemplates();
-    // Start all polling
-    startAdminDashboardPolling();
-    startLiveDashboardPolling();
-    const liveSection = document.getElementById('tab-content-live');
-    if (liveSection) liveSection.style.display = '';
-    // Auto-run search to show all users immediately
-    runAdminSearch();
-  } catch(e) {
-    showMsg(msg, '❌ Network error. Please try again.', 'err');
-  } finally {
-    setBtnLoading('a-login-btn', false, 'Access Admin Panel');
-  }
-}
+// adminLogin override removed — original at top already includes runAdminSearch() call
+
 
 // ═══════════════════════════════════════════════════════
 //  FIX: ADMIN SEARCH USES AUTHENTICATED apiFetch (Issue #4)
