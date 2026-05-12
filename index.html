@@ -4125,6 +4125,7 @@ const API_BASE = "https://api.futurehiretech.com";
 // ═══════════════════════════════════════════════════════
 let currentTab = 'candidate';
 let selfTags = [];
+let _selfHasDbPassword = false; // true when DB has saved Dice password for this candidate
 let candidates = [];      // legacy — synced from rcCandidates
 let cId = 0;
 let currentJobId = null;
@@ -4443,6 +4444,7 @@ function candidateLogout() {
   // Stop candidate dashboard polling and clear saved dice password
   if (typeof stopCandidateDashboardPolling === 'function') stopCandidateDashboardPolling();
   if (typeof _clearSelfDicePassword === 'function') _clearSelfDicePassword();
+  _selfHasDbPassword = false;
   hideSidebar();
   unlockRole();
   showCandidateView('login');
@@ -5162,7 +5164,7 @@ async function saveCandidateDetails() {
       // Update locked email display
       _updateLockedEmailDisplay(email);
       // Store Dice password in sessionStorage so it persists across automation starts
-      if (pass) _saveSelfDicePassword(pass);
+      if (pass) { _saveSelfDicePassword(pass); _selfHasDbPassword = true; }
       // Show saved indicator on password field
       const hint = document.getElementById('s-pass-hint');
       if (hint) hint.style.display = '';
@@ -5462,11 +5464,15 @@ async function startJob(jobMode) {
     const email = document.getElementById('s-email').value.trim();
     let pass    = document.getElementById('s-pass').value.trim();
     // Auto-load saved Dice password from sessionStorage if field is blank
-    if (!pass) {
-      pass = _getSelfDicePassword();
+    if (!pass) pass = _getSelfDicePassword();
+    // If password not in sessionStorage but is saved in DB, the backend will
+    // auto-load it from the database — only block if there's truly no password anywhere
+    if (!email) {
+      toast('Enter your Dice email to start.', 'err');
+      return;
     }
-    if (!email || !pass) {
-      toast('Enter your Dice email and password to start.', 'err');
+    if (!pass && !_selfHasDbPassword) {
+      toast('Enter your Dice password to start.', 'err');
       return;
     }
     if (selfTags.length === 0) {
@@ -7473,13 +7479,12 @@ async function loadCandidateDetailsFromDB(userId) {
         _updateLockedEmailDisplay(d.dice_email);
       }
       if (d.has_password) {
+        _selfHasDbPassword = true;
         const hint = document.getElementById('s-pass-hint');
         if (hint) hint.style.display = '';
-        // If we don't have it in sessionStorage already, inform user
-        if (!_getSelfDicePassword()) {
-          const passEl = document.getElementById('s-pass');
-          if (passEl) passEl.placeholder = '✅ Password saved — enter to update';
-        }
+        // Update placeholder so user knows password is saved in DB
+        const passEl = document.getElementById('s-pass');
+        if (passEl) passEl.placeholder = '✅ Password saved — enter to change';
       }
       if (d.searches && d.searches.length) { selfTags = d.searches; renderSelfTags(); }
       if (d.max_pages)  document.getElementById('s-pages').value = d.max_pages;
