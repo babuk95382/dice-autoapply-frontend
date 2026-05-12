@@ -4305,6 +4305,30 @@ async function candidateLogin() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
+
+    // ── Restore saved Dice settings from login response immediately ──
+    // The backend includes saved_details (with dice_password) in the login
+    // response so we don't need a separate API call — settings appear
+    // instantly and automation can start without re-entering the password.
+    const sd = data.user?.saved_details;
+    if (sd) {
+      if (sd.dice_email) {
+        document.getElementById('s-email').value = sd.dice_email;
+        _updateLockedEmailDisplay(sd.dice_email);
+      }
+      if (sd.dice_password) {
+        _selfDicePassword = sd.dice_password;
+        const hint = document.getElementById('s-pass-hint');
+        if (hint) hint.style.display = '';
+      }
+      if (sd.searches && sd.searches.length)  { selfTags = sd.searches; renderSelfTags(); }
+      if (sd.max_pages)   document.getElementById('s-pages').value = sd.max_pages;
+      if (sd.max_jobs)    document.getElementById('s-jobs').value  = sd.max_jobs;
+      if (sd.date_filter) document.getElementById('s-date').value  = sd.date_filter;
+      if (sd.employment)  document.getElementById('s-etype').value = sd.employment;
+      if (sd.easy_apply !== undefined) document.getElementById('s-easy').value = sd.easy_apply ? 'true' : 'false';
+    }
+
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('setup');
@@ -6244,7 +6268,7 @@ async function runAdminSearch() {
   if (!resEl) return;
   resEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Searching…</div>';
   try {
-    let url = `${API_BASE}/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
+    let url = `/api/admin/search?q=${encodeURIComponent(q)}&sub_status=${encodeURIComponent(_adminSubFilter)}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo)   url += `&date_to=${encodeURIComponent(dateTo)}`;
     const res  = await apiFetch(url, { credentials: 'include' });
@@ -6431,7 +6455,7 @@ function stopLiveDashboardPolling() {
 
 async function pollLiveDashboard() {
   try {
-    let url = `${API_BASE}/api/live/dashboard`;
+    let url = `/api/live/dashboard`;
     const uid   = authState.candidate?.user?.id || authState.recruiter?.user?.id || '';
     const utype = authState.candidate?.loggedIn ? 'candidate' : authState.recruiter?.loggedIn ? 'recruiter' : '';
     if (uid && utype) url += `?user_id=${encodeURIComponent(uid)}&user_type=${utype}`;
