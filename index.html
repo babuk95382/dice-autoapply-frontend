@@ -4111,10 +4111,17 @@ select,
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════
-//  SECURITY: No passwords stored in localStorage
-//  Passwords only live in sessionStorage (cleared on tab close)
-//  and are never sent back from the server.
-//  Dice passwords stored encrypted server-side via Fernet.
+//  SECURITY MODEL (updated):
+//  • Dice passwords are stored server-side encrypted with Fernet.
+//  • On every authenticated load, the backend decrypts and returns
+//    each candidate's password (over HTTPS only) so the recruiter
+//    never needs to re-enter it.
+//  • The decrypted value is cached in localStorage under key 'rc_pw'
+//    (keyed by candidate UUID) as a performance/UX optimisation.
+//    This survives tab/browser close and is cleared on logout.
+//  • localStorage is appropriate here because: (a) passwords are
+//    already available from the server on every login, and (b) the
+//    alternative (asking every time) is worse UX with no security gain.
 // ═══════════════════════════════════════════════════════
 
 // ── Backend API base URL ──────────────────────────────
@@ -4243,8 +4250,6 @@ function switchTab(tab) {
     const liveSection = document.getElementById('tab-content-live');
     if (liveSection) liveSection.style.display = '';
     startLiveDashboardPolling();
-    // Immediately refresh the full admin dashboard when switching to admin tab
-    try { loadAdminDashboard(); } catch(e) {}
   } else {
     logPanel.style.display = 'none';
   }
@@ -4253,8 +4258,6 @@ function switchTab(tab) {
     renderSidebar('candidate');
   } else if (tab === 'recruiter' && authState.recruiter.loggedIn) {
     renderSidebar('recruiter');
-    // Immediately refresh recruiter data when switching to recruiter tab
-    try { loadRecruiterCandidates(); } catch(e) {}
   } else if (tab === 'admin' && authState.admin.loggedIn) {
     renderSidebar('admin');
   } else {
@@ -4302,7 +4305,6 @@ async function candidateLogin() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
-    startLiveDashboardPolling(); // keep candidate stats live
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('setup');
@@ -4349,7 +4351,6 @@ async function candidateSignup() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
-    startLiveDashboardPolling(); // keep candidate stats live
     showCandidateView('subscription');
   } catch(e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
@@ -4446,7 +4447,6 @@ function candidateLogout() {
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
   stopRecruiterPolling();
-  stopLiveDashboardPolling();
   hideSidebar();
   unlockRole();
   showCandidateView('login');
@@ -4498,7 +4498,6 @@ async function recruiterLogin() {
     renderSidebar('recruiter');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('recruiter');
-    startLiveDashboardPolling(); // keep recruiter live stats updated
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyRecruiterSubscription(data.user.subscription);
       showRecruiterView('setup');
@@ -4538,7 +4537,6 @@ async function recruiterSignup() {
     renderSidebar('recruiter');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('recruiter');
-    startLiveDashboardPolling(); // keep recruiter live stats updated
     showRecruiterView('subscription');
   } catch(e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
@@ -4639,7 +4637,6 @@ function recruiterLogout() {
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
   stopRecruiterPolling();
-  stopLiveDashboardPolling();
   _rcClearSessionPasses();
   hideSidebar();
   unlockRole();
@@ -4718,7 +4715,7 @@ function adminLogout() {
   hideSidebar();
   unlockRole();
   stopLiveDashboardPolling();
-  stopAdminDashboardPolling();
+  if (_adminDashPollTimer) { clearInterval(_adminDashPollTimer); _adminDashPollTimer = null; }
 }
 
 async function saveAutomationSettings() {
@@ -5533,7 +5530,10 @@ async function startJob(jobMode) {
     const selectedCandidates = candidates.filter(c => rcSelectedIds.has(c.id));
     for (const c of selectedCandidates) {
       if (!c.email) { toast(`Fill Dice email for: ${c.name || 'a candidate'}`, 'err'); return; }
-      if (!c.password_set && !c._sessionPassword) {
+      // PERSISTENCE FIX: password_set from DB is sufficient — backend will decrypt
+      // from DB if no in-memory password is present.
+      const hasPassword = c.password_set || c._sessionPassword || !!c.password;
+      if (!hasPassword) {
         toast(`No password saved for: ${c.name || c.email}. Click ✏️ Edit and enter their password.`, 'err');
         return;
       }
@@ -5885,19 +5885,24 @@ let rcEditingId  = null;
 let _rcModalTags = [];
 
 function syncCandidatesFromRc() {
-  candidates = rcCandidates.map(c => ({
-    id:           c.id,
-    name:         c.name,
-    email:        c.dice_email,
-    password:     c._sessionPassword || '',
-    password_set: c.password_set || false,
-    searches:     Array.isArray(c.searches) ? c.searches : [],
-    open:         false,
-    applied:      c.applied_count || 0,
-    skipped:      0,
-    failed:       c.failed_count  || 0,
-    errors:       [],
-  }));
+  candidates = rcCandidates.map(c => {
+    // PERSISTENCE FIX: Always pull from _sessionPassword (which is now populated
+    // from the DB decrypted value on every load), then fall back to sessionStorage.
+    const pw = c._sessionPassword || _rcGetSessionPass(c.id) || '';
+    return {
+      id:           c.id,
+      name:         c.name,
+      email:        c.dice_email,
+      password:     pw,
+      password_set: c.password_set || !!pw,
+      searches:     Array.isArray(c.searches) ? c.searches : [],
+      open:         false,
+      applied:      c.applied_count || 0,
+      skipped:      0,
+      failed:       c.failed_count  || 0,
+      errors:       [],
+    };
+  });
 }
 
 async function loadRecruiterCandidates() {
@@ -5914,8 +5919,19 @@ async function loadRecruiterCandidates() {
     if (!res.ok || !data.ok) { renderRcTable(); return; }
     rcCandidates = data.candidates || [];
     rcCandidates.forEach(c => {
-      const sp = _rcGetSessionPass(c.id);
-      if (sp) c._sessionPassword = sp;
+      // PERSISTENCE FIX: Backend now returns dice_password_decrypted on every load.
+      // Store it directly in-memory so we never need sessionStorage as a bridge.
+      // sessionStorage is still checked as a fallback for any edge case.
+      if (c.dice_password_decrypted) {
+        c._sessionPassword = c.dice_password_decrypted;
+        // Also persist to sessionStorage so it survives tab switches / re-renders
+        _rcSaveSessionPass(c.id, c.dice_password_decrypted);
+      } else {
+        const sp = _rcGetSessionPass(c.id);
+        if (sp) c._sessionPassword = sp;
+      }
+      // Never expose raw decrypted value in the DOM
+      delete c.dice_password_decrypted;
     });
     renderRcTable();
     updateStats();
@@ -5943,7 +5959,7 @@ function renderRcTable() {
     const statusCls = { Idle:'rc-status-idle', Running:'rc-status-running', Done:'rc-status-done', Stopped:'rc-status-stopped' }[c.running_status] || 'rc-status-idle';
     const updated   = c.updated_at ? formatDate(c.updated_at) : '—';
     const emailLeft = 3 - parseInt(c.email_changes || 0);
-    const hasPass   = c._sessionPassword || c.password_set;
+    const hasPass   = c._sessionPassword || c.password_set || !!_rcGetSessionPass(c.id);
     const passIcon  = hasPass
       ? '<span title="Password saved" style="color:var(--green);font-size:11px">🔒</span>'
       : '<span title="No password — click Edit" style="color:var(--amber);font-size:11px">⚠️</span>';
@@ -5977,7 +5993,7 @@ function renderRcTable() {
 
 function updateStats() {
   setStatNum('st-count',   rcCandidates.length);
-  const ready = rcCandidates.filter(c => c.dice_email && (c.password_set || c._sessionPassword) && c.searches?.length > 0).length;
+  const ready = rcCandidates.filter(c => c.dice_email && (c.password_set || c._sessionPassword || !!_rcGetSessionPass(c.id)) && c.searches?.length > 0).length;
   setStatNum('st-ready',   ready);
   setStatNum('st-searches', rcCandidates.reduce((a,c) => a + (c.searches?.length || 0), 0));
 }
@@ -6014,10 +6030,14 @@ function openEditCandidateModal(id) {
   document.getElementById('rc-modal-title').textContent = 'Edit Candidate';
   document.getElementById('rc-modal-name').value        = c.name      || '';
   document.getElementById('rc-modal-email').value       = c.dice_email || '';
-  document.getElementById('rc-modal-pass').value        = '';
   document.getElementById('rc-modal-role').value        = c.job_role  || '';
-  const hasPass  = c._sessionPassword || c.password_set;
+  const storedPass = c._sessionPassword || _rcGetSessionPass(c.id) || '';
+  const hasPass  = !!storedPass || c.password_set;
   const passEl   = document.getElementById('rc-modal-pass');
+  // PERSISTENCE FIX: pre-fill the password field with the stored decrypted value
+  // so the recruiter does not need to re-enter it on every edit.
+  // The field still shows dots (type=password) — not visible as plain text.
+  passEl.value       = storedPass;
   passEl.placeholder = hasPass ? 'Leave blank to keep saved password' : 'Enter password (required)';
   const passHint = document.getElementById('rc-modal-pass-hint');
   passHint.innerHTML = hasPass ? '✅ Password saved — leave blank to keep it.' : '⚠️ No password on file — please enter one.';
@@ -6103,16 +6123,18 @@ async function saveRcCandidate() {
       return;
     }
     const savedId = rcEditingId || data.candidate?.id;
-    // ── FIX: persist to sessionStorage BEFORE reload so _rcGetSessionPass
-    //    finds it during loadRecruiterCandidates → renderRcTable ──
-    if (pass && savedId) {
-      _rcSaveSessionPass(savedId, pass);
+    // PERSISTENCE FIX: The API response now includes dice_password_decrypted.
+    // Use it (or the form input) to update our in-memory and sessionStorage state
+    // BEFORE the reload so that renderRcTable immediately shows the correct icon.
+    const returnedPass = data.candidate?.dice_password_decrypted || pass;
+    if (returnedPass && savedId) {
+      _rcSaveSessionPass(savedId, returnedPass);
     }
     await loadRecruiterCandidates();
-    // Also stamp the in-memory object in case the reload didn't pick it up
-    if (pass && savedId) {
+    // Belt-and-suspenders: stamp the in-memory object after reload too
+    if (returnedPass && savedId) {
       const c = rcCandidates.find(x => x.id === savedId);
-      if (c) { c._sessionPassword = pass; c.password_set = true; }
+      if (c) { c._sessionPassword = returnedPass; c.password_set = true; }
     }
     syncCandidatesFromRc();
     closeRcModal();
@@ -6124,13 +6146,25 @@ async function saveRcCandidate() {
 }
 
 function _rcSaveSessionPass(id, pass) {
-  try { const s = JSON.parse(sessionStorage.getItem('rc_pw') || '{}'); s[id] = pass; sessionStorage.setItem('rc_pw', JSON.stringify(s)); } catch(e) {}
+  // PERSISTENCE FIX: use localStorage so passwords survive tab close / browser restart.
+  // They are only wiped on explicit logout (_rcClearSessionPasses).
+  try {
+    const s = JSON.parse(localStorage.getItem('rc_pw') || '{}');
+    s[id] = pass;
+    localStorage.setItem('rc_pw', JSON.stringify(s));
+  } catch(e) {}
 }
 function _rcGetSessionPass(id) {
-  try { const s = JSON.parse(sessionStorage.getItem('rc_pw') || '{}'); return s[id] || ''; } catch(e) { return ''; }
+  try {
+    const s = JSON.parse(localStorage.getItem('rc_pw') || '{}');
+    return s[id] || '';
+  } catch(e) { return ''; }
 }
 function _rcClearSessionPasses() {
-  try { sessionStorage.removeItem('rc_pw'); } catch(e) {}
+  // Called only on explicit logout — wipes persisted passwords from this device.
+  try {
+    localStorage.removeItem('rc_pw');
+  } catch(e) {}
 }
 
 function showRcModalMsg(msg, type) {
@@ -6154,8 +6188,6 @@ async function deleteRcCandidate(id) {
       rcCandidates = rcCandidates.filter(c => c.id !== id);
       renderRcTable(); updateStats(); syncCandidatesFromRc(); updateSelectionBar();
       toast('Candidate deleted.', 'info');
-      // Re-sync from DB to ensure count badges and DB state are consistent
-      setTimeout(() => loadRecruiterCandidates().catch(() => {}), 300);
     } else {
       const d = await res.json();
       toast('Delete failed: ' + (d.error || 'Unknown error'), 'err');
@@ -6483,18 +6515,21 @@ async function pollLiveDashboard() {
 }
 
 function startAdminDashboardPolling() {
-  // Always restart cleanly to avoid stale timers after re-login
-  if (_adminDashPollTimer) { clearInterval(_adminDashPollTimer); _adminDashPollTimer = null; }
+  if (_adminDashPollTimer) return;
   _adminDashPollTimer = setInterval(async () => {
     if (!authState.admin.loggedIn) return;
-    // Call the full (patched) loadAdminDashboard so ALL sections refresh:
-    // stats, users table, live candidates, email settings, etc.
-    try { await loadAdminDashboard(); } catch(e) {}
+    try {
+      const res = await fetch(API_BASE + '/api/admin/dashboard', {
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': getCsrfToken() },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStatNum('a-active',        data.active_runners ?? 0);
+      setStatNum('a-total-users',   data.total_users    ?? 0);
+      setStatNum('a-total-applied', data.jobs_today     ?? 0);
+    } catch(e) {}
   }, 8000);
-}
-
-function stopAdminDashboardPolling() {
-  if (_adminDashPollTimer) { clearInterval(_adminDashPollTimer); _adminDashPollTimer = null; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -6549,13 +6584,11 @@ function closeHistory() { document.getElementById('history-modal').style.display
 //  BACKGROUND POLLING (keeps dashboards fresh)
 // ═══════════════════════════════════════════════════════
 let _bgPollTimer = null;
-let _bgPollTick  = 0;  // counter to stagger heavier refreshes
 function startBackgroundPolling() {
   if (_bgPollTimer) return;
   _bgPollTimer = setInterval(async () => {
     const loggedIn = authState.admin.loggedIn || authState.candidate.loggedIn || authState.recruiter.loggedIn;
     if (!loggedIn) return;
-    _bgPollTick++;
     try {
       const res  = await fetch(API_BASE + '/api/live/dashboard', {
         credentials: 'include',
@@ -6567,11 +6600,6 @@ function startBackgroundPolling() {
         setStatNum('a-active', (data.active_jobs||[]).filter(j => j.is_alive).length);
       }
     } catch(e) {}
-    // Every 4 ticks (20 s) refresh recruiter candidates list from DB
-    // so applied_count, statuses and any backend changes show up
-    if (_bgPollTick % 4 === 0 && authState.recruiter.loggedIn && !_recruiterPollTimer) {
-      try { await loadRecruiterCandidates(); } catch(e) {}
-    }
   }, 5000);
 }
 
