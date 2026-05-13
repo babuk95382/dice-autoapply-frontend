@@ -2577,6 +2577,115 @@ select,
   display:inline-block;
   box-shadow:var(--glow-accent);
 }
+
+/* ── OTP UI components ── */
+.otp-email-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.otp-email-row input {
+  flex: 1;
+  min-width: 0;
+}
+.otp-send-btn {
+  flex-shrink: 0;
+  padding: 0 16px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+.otp-send-btn:hover  { background: var(--accent2); color: #fff; }
+.otp-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.otp-sent-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(37,211,102,0.2);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+.otp-sent-icon { font-size: 18px; }
+
+.otp-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.otp-input-row input {
+  flex: 1;
+  letter-spacing: 6px;
+  font-size: 20px;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+}
+.otp-verify-btn {
+  flex-shrink: 0;
+  padding: 0 18px;
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.otp-verify-btn:hover    { background: var(--purple2); }
+.otp-verify-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.otp-resend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  min-height: 22px;
+}
+.otp-timer {
+  font-size: 12px;
+  color: var(--text3);
+}
+.otp-resend-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.otp-resend-btn:hover { color: var(--accent2); }
+
+.otp-verified-badge {
+  background: var(--green-dim);
+  border: 1px solid rgba(37,211,102,0.25);
+  border-radius: var(--r);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 </style>
 </head>
 <body>
@@ -2664,49 +2773,126 @@ select,
 
       <!-- Auth: Sign Up -->
       <div id="c-auth-signup" class="auth-view" style="display:none">
-        <div class="auth-card">
-          <div class="auth-logo">
-            <div class="logo-mark">✨</div>
-            <div class="auth-title">Create Account</div>
-            <div class="auth-sub">Join as a candidate and start applying</div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">✨</div>
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">Join as a candidate and start applying</div>
+    </div>
+    <div class="auth-form">
+      <!-- Step 1: registration fields + send OTP -->
+      <div id="c-su-step1">
+        <div class="grid-2">
+          <div class="field"><label>First Name</label><input id="c-su-fname" type="text" placeholder="Jane" autocomplete="given-name"></div>
+          <div class="field"><label>Last Name</label><input id="c-su-lname" type="text" placeholder="Smith" autocomplete="family-name"></div>
+        </div>
+        <div class="field"><label>Email</label>
+          <div class="otp-email-row">
+            <input id="c-su-email" type="email" placeholder="you@email.com" autocomplete="email">
+            <button class="otp-send-btn" id="c-su-send-otp-btn" type="button" onclick="cSuSendOtp()">Send OTP</button>
           </div>
-          <div class="auth-form">
-            <div class="grid-2">
-              <div class="field"><label>First Name</label><input id="c-su-fname" type="text" placeholder="Jane" autocomplete="given-name"></div>
-              <div class="field"><label>Last Name</label><input id="c-su-lname" type="text" placeholder="Smith" autocomplete="family-name"></div>
-            </div>
-            <div class="field"><label>Email</label><input id="c-su-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
-            <div class="field"><label>Contact Number</label><input id="c-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
-            <div class="field">
-              <label>Password</label>
-              <div class="pw-wrap">
-                <input id="c-su-pass" type="password" placeholder="Create a strong password" autocomplete="new-password">
-                <button type="button" class="pw-toggle" onclick="togglePw('c-su-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-              </div>
-            </div>
-            <div id="c-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="c-signup-btn" onclick="candidateSignup()">Create Account</button>
-            <div class="auth-link">Already have an account? <a onclick="showCandidateView('login')">Sign in</a></div>
+        </div>
+        <div class="field"><label>Contact Number</label><input id="c-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input id="c-su-pass" type="password" placeholder="Create a strong password" autocomplete="new-password">
+            <button type="button" class="pw-toggle" onclick="togglePw('c-su-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
           </div>
         </div>
       </div>
 
+      <!-- Step 2: OTP entry (hidden until OTP sent) -->
+      <div id="c-su-step2" style="display:none">
+        <div class="otp-sent-notice">
+          <span class="otp-sent-icon">📧</span>
+          <span>OTP sent to <strong id="c-su-otp-email-display"></strong></span>
+        </div>
+        <div class="field">
+          <label>Enter 6-digit OTP</label>
+          <div class="otp-input-row">
+            <input id="c-su-otp" type="text" inputmode="numeric" maxlength="6"
+                   placeholder="000000" autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+            <button class="otp-verify-btn" type="button" id="c-su-verify-btn" onclick="cSuVerifyOtp()">Verify</button>
+          </div>
+        </div>
+        <div class="otp-resend-row">
+          <span id="c-su-resend-timer" class="otp-timer"></span>
+          <button class="otp-resend-btn" id="c-su-resend-btn" type="button" style="display:none" onclick="cSuSendOtp(true)">Resend OTP</button>
+        </div>
+        <div id="c-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✅ Email verified!</div>
+      </div>
+
+      <div id="c-signup-msg" class="auth-msg" role="alert"></div>
+      <button class="auth-btn" id="c-signup-btn" onclick="candidateSignup()" disabled>Create Account</button>
+      <div class="auth-link">Already have an account? <a onclick="showCandidateView('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
       <!-- Auth: Forgot Password -->
       <div id="c-auth-forgot" class="auth-view" style="display:none">
-        <div class="auth-card">
-          <div class="auth-logo">
-            <div class="logo-mark">🔑</div>
-            <div class="auth-title">Reset Password</div>
-            <div class="auth-sub">We'll send a reset link to your email</div>
-          </div>
-          <div class="auth-form">
-            <div class="field"><label>Email</label><input id="c-fp-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
-            <div id="c-forgot-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" onclick="candidateForgot()">Send Reset Link</button>
-            <div class="auth-link"><a onclick="showCandidateView('login')">← Back to login</a></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">🔑</div>
+      <div class="auth-title">Reset Password</div>
+      <div class="auth-sub">Verify your email with an OTP to reset</div>
+    </div>
+    <div class="auth-form">
+      <!-- Step 1: enter email -->
+      <div id="c-fp-step1">
+        <div class="field"><label>Email</label>
+          <div class="otp-email-row">
+            <input id="c-fp-email" type="email" placeholder="you@email.com" autocomplete="email">
+            <button class="otp-send-btn" id="c-fp-send-btn" type="button" onclick="cFpSendOtp()">Send OTP</button>
           </div>
         </div>
       </div>
+      <!-- Step 2+3: OTP + new password (hidden until OTP sent) -->
+      <div id="c-fp-step2" style="display:none">
+        <div class="otp-sent-notice">
+          <span class="otp-sent-icon">📧</span>
+          <span>OTP sent to <strong id="c-fp-otp-email-display"></strong></span>
+        </div>
+        <div class="field">
+          <label>Enter 6-digit OTP</label>
+          <div class="otp-input-row">
+            <input id="c-fp-otp" type="text" inputmode="numeric" maxlength="6"
+                   placeholder="000000" autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+            <button class="otp-verify-btn" type="button" id="c-fp-verify-btn" onclick="cFpVerifyOtp()">Verify</button>
+          </div>
+        </div>
+        <div class="otp-resend-row">
+          <span id="c-fp-resend-timer" class="otp-timer"></span>
+          <button class="otp-resend-btn" id="c-fp-resend-btn" type="button" style="display:none" onclick="cFpSendOtp(true)">Resend OTP</button>
+        </div>
+        <!-- New password fields (shown after OTP verified) -->
+        <div id="c-fp-pw-fields" style="display:none">
+          <div class="otp-verified-badge" style="display:block;margin-bottom:12px">✅ Email verified! Set your new password.</div>
+          <div class="field">
+            <label>New Password</label>
+            <div class="pw-wrap">
+              <input id="c-fp-newpass" type="password" placeholder="New strong password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" onclick="togglePw('c-fp-newpass',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <div class="pw-wrap">
+              <input id="c-fp-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" onclick="togglePw('c-fp-confirm',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            </div>
+          </div>
+          <button class="auth-btn" id="c-fp-reset-btn" type="button" onclick="cFpResetPassword()">Reset Password</button>
+        </div>
+      </div>
+      <div id="c-forgot-msg" class="auth-msg" role="alert"></div>
+      <div class="auth-link"><a onclick="showCandidateView('login')">← Back to login</a></div>
+    </div>
+  </div>
+</div>
 
       <!-- Post-login: Subscription Selection -->
       <div id="c-subscription" style="display:none">
@@ -3095,49 +3281,119 @@ select,
 
       <!-- Auth: Sign Up -->
       <div id="r-auth-signup" class="auth-view" style="display:none">
-        <div class="auth-card">
-          <div class="auth-logo">
-            <div class="logo-mark">✨</div>
-            <div class="auth-title">Recruiter Sign Up</div>
-            <div class="auth-sub">Create your recruiter account</div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">✨</div>
+      <div class="auth-title">Recruiter Sign Up</div>
+      <div class="auth-sub">Create your recruiter account</div>
+    </div>
+    <div class="auth-form">
+      <div id="r-su-step1">
+        <div class="grid-2">
+          <div class="field"><label>First Name</label><input id="r-su-fname" type="text" placeholder="John" autocomplete="given-name"></div>
+          <div class="field"><label>Last Name</label><input id="r-su-lname" type="text" placeholder="Doe" autocomplete="family-name"></div>
+        </div>
+        <div class="field"><label>Email</label>
+          <div class="otp-email-row">
+            <input id="r-su-email" type="email" placeholder="recruiter@company.com" autocomplete="email">
+            <button class="otp-send-btn" id="r-su-send-otp-btn" type="button" onclick="rSuSendOtp()">Send OTP</button>
           </div>
-          <div class="auth-form">
-            <div class="grid-2">
-              <div class="field"><label>First Name</label><input id="r-su-fname" type="text" placeholder="John" autocomplete="given-name"></div>
-              <div class="field"><label>Last Name</label><input id="r-su-lname" type="text" placeholder="Doe" autocomplete="family-name"></div>
-            </div>
-            <div class="field"><label>Email</label><input id="r-su-email" type="email" placeholder="recruiter@company.com" autocomplete="email"></div>
-            <div class="field"><label>Contact Number</label><input id="r-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
-            <div class="field">
-              <label>Password</label>
-              <div class="pw-wrap">
-                <input id="r-su-pass" type="password" placeholder="Create a strong password" autocomplete="new-password">
-                <button type="button" class="pw-toggle" onclick="togglePw('r-su-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-              </div>
-            </div>
-            <div id="r-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="r-signup-btn" onclick="recruiterSignup()">Create Account</button>
-            <div class="auth-link">Already have an account? <a onclick="showRecruiterView('login')">Sign in</a></div>
+        </div>
+        <div class="field"><label>Contact Number</label><input id="r-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input id="r-su-pass" type="password" placeholder="Create a strong password" autocomplete="new-password">
+            <button type="button" class="pw-toggle" onclick="togglePw('r-su-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
           </div>
         </div>
       </div>
+      <div id="r-su-step2" style="display:none">
+        <div class="otp-sent-notice">
+          <span class="otp-sent-icon">📧</span>
+          <span>OTP sent to <strong id="r-su-otp-email-display"></strong></span>
+        </div>
+        <div class="field">
+          <label>Enter 6-digit OTP</label>
+          <div class="otp-input-row">
+            <input id="r-su-otp" type="text" inputmode="numeric" maxlength="6"
+                   placeholder="000000" autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+            <button class="otp-verify-btn" type="button" id="r-su-verify-btn" onclick="rSuVerifyOtp()">Verify</button>
+          </div>
+        </div>
+        <div class="otp-resend-row">
+          <span id="r-su-resend-timer" class="otp-timer"></span>
+          <button class="otp-resend-btn" id="r-su-resend-btn" type="button" style="display:none" onclick="rSuSendOtp(true)">Resend OTP</button>
+        </div>
+        <div id="r-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✅ Email verified!</div>
+      </div>
+      <div id="r-signup-msg" class="auth-msg" role="alert"></div>
+      <button class="auth-btn" id="r-signup-btn" onclick="recruiterSignup()" disabled>Create Account</button>
+      <div class="auth-link">Already have an account? <a onclick="showRecruiterView('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
 
       <!-- Auth: Forgot Password -->
       <div id="r-auth-forgot" class="auth-view" style="display:none">
-        <div class="auth-card">
-          <div class="auth-logo">
-            <div class="logo-mark">🔑</div>
-            <div class="auth-title">Reset Password</div>
-            <div class="auth-sub">We'll send a reset link to your email</div>
-          </div>
-          <div class="auth-form">
-            <div class="field"><label>Email</label><input id="r-fp-email" type="email" placeholder="recruiter@company.com" autocomplete="email"></div>
-            <div id="r-forgot-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" onclick="recruiterForgot()">Send Reset Link</button>
-            <div class="auth-link"><a onclick="showRecruiterView('login')">← Back to login</a></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">🔑</div>
+      <div class="auth-title">Reset Password</div>
+      <div class="auth-sub">Verify your email with an OTP to reset</div>
+    </div>
+    <div class="auth-form">
+      <div id="r-fp-step1">
+        <div class="field"><label>Email</label>
+          <div class="otp-email-row">
+            <input id="r-fp-email" type="email" placeholder="recruiter@company.com" autocomplete="email">
+            <button class="otp-send-btn" id="r-fp-send-btn" type="button" onclick="rFpSendOtp()">Send OTP</button>
           </div>
         </div>
       </div>
+      <div id="r-fp-step2" style="display:none">
+        <div class="otp-sent-notice">
+          <span class="otp-sent-icon">📧</span>
+          <span>OTP sent to <strong id="r-fp-otp-email-display"></strong></span>
+        </div>
+        <div class="field">
+          <label>Enter 6-digit OTP</label>
+          <div class="otp-input-row">
+            <input id="r-fp-otp" type="text" inputmode="numeric" maxlength="6"
+                   placeholder="000000" autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+            <button class="otp-verify-btn" type="button" id="r-fp-verify-btn" onclick="rFpVerifyOtp()">Verify</button>
+          </div>
+        </div>
+        <div class="otp-resend-row">
+          <span id="r-fp-resend-timer" class="otp-timer"></span>
+          <button class="otp-resend-btn" id="r-fp-resend-btn" type="button" style="display:none" onclick="rFpSendOtp(true)">Resend OTP</button>
+        </div>
+        <div id="r-fp-pw-fields" style="display:none">
+          <div class="otp-verified-badge" style="display:block;margin-bottom:12px">✅ Email verified! Set your new password.</div>
+          <div class="field">
+            <label>New Password</label>
+            <div class="pw-wrap">
+              <input id="r-fp-newpass" type="password" placeholder="New strong password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" onclick="togglePw('r-fp-newpass',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <div class="pw-wrap">
+              <input id="r-fp-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" onclick="togglePw('r-fp-confirm',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            </div>
+          </div>
+          <button class="auth-btn" id="r-fp-reset-btn" type="button" onclick="rFpResetPassword()">Reset Password</button>
+        </div>
+      </div>
+      <div id="r-forgot-msg" class="auth-msg" role="alert"></div>
+      <div class="auth-link"><a onclick="showRecruiterView('login')">← Back to login</a></div>
+    </div>
+  </div>
+</div>
 
       <!-- Recruiter Subscription -->
       <div id="r-subscription" style="display:none">
@@ -4354,6 +4610,299 @@ function _applyCandidateDashboard(user) {
   document.getElementById('c-live-avatar').textContent = name[0].toUpperCase();
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// OTP STATE & HELPERS
+// ══════════════════════════════════════════════════════════════════
+const _otpState = {
+  c_su:  { verified: false, email: '', timerHandle: null },
+  c_fp:  { verified: false, email: '', timerHandle: null },
+  r_su:  { verified: false, email: '', timerHandle: null },
+  r_fp:  { verified: false, email: '', timerHandle: null },
+};
+
+function _startOtpTimer(ctx, timerElId, resendBtnId, durationSec = 120) {
+  const state = _otpState[ctx];
+  if (state.timerHandle) clearInterval(state.timerHandle);
+  let remaining = durationSec;
+  const timerEl   = document.getElementById(timerElId);
+  const resendBtn = document.getElementById(resendBtnId);
+  if (resendBtn) resendBtn.style.display = 'none';
+  const tick = () => {
+    if (timerEl) timerEl.textContent = `Resend in ${remaining}s`;
+    remaining--;
+    if (remaining < 0) {
+      clearInterval(state.timerHandle);
+      if (timerEl)   timerEl.textContent = '';
+      if (resendBtn) resendBtn.style.display = '';
+    }
+  };
+  tick();
+  state.timerHandle = setInterval(tick, 1000);
+}
+
+/* ─── CANDIDATE SIGNUP OTP ─────────────────────────────────── */
+
+async function cSuSendOtp(isResend = false) {
+  const email   = document.getElementById('c-su-email').value.trim();
+  const msg     = document.getElementById('c-signup-msg');
+  const sendBtn = document.getElementById('c-su-send-otp-btn');
+  if (!email) { showMsg(msg, 'Please enter your email first.', 'err'); return; }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+
+  try {
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
+      sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
+      return;
+    }
+    _otpState.c_su.email    = email;
+    _otpState.c_su.verified = false;
+    document.getElementById('c-su-otp-email-display').textContent = email;
+    document.getElementById('c-su-step2').style.display = '';
+    document.getElementById('c-su-otp-verified-badge').style.display = 'none';
+    document.getElementById('c-signup-btn').disabled = true;
+    _startOtpTimer('c_su', 'c-su-resend-timer', 'c-su-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent! Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error. Please try again.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function cSuVerifyOtp() {
+  const otp     = document.getElementById('c-su-otp').value.trim();
+  const email   = _otpState.c_su.email;
+  const msg     = document.getElementById('c-signup-msg');
+  const verBtn  = document.getElementById('c-su-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Verification failed'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.c_su.verified = true;
+    document.getElementById('c-su-otp-verified-badge').style.display = '';
+    document.getElementById('c-signup-btn').disabled = false;
+    verBtn.disabled = true; verBtn.textContent = '✓';
+    showMsg(msg, '✅ Email verified! You can now create your account.', 'ok');
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+/* ─── CANDIDATE FORGOT PASSWORD OTP ───────────────────────── */
+
+async function cFpSendOtp(isResend = false) {
+  const email   = document.getElementById('c-fp-email').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+  const sendBtn = document.getElementById('c-fp-send-btn');
+  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    await apiPost('/api/auth/forgot-password/send-otp', { email, role: 'candidate' });
+    _otpState.c_fp.email    = email;
+    _otpState.c_fp.verified = false;
+    document.getElementById('c-fp-otp-email-display').textContent = email;
+    document.getElementById('c-fp-step2').style.display = '';
+    document.getElementById('c-fp-pw-fields').style.display = 'none';
+    _startOtpTimer('c_fp', 'c-fp-resend-timer', 'c-fp-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent (if email is registered). Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function cFpVerifyOtp() {
+  const otp     = document.getElementById('c-fp-otp').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+  const verBtn  = document.getElementById('c-fp-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+  _otpState.c_fp.otp      = otp;
+  _otpState.c_fp.verified = true;
+  document.getElementById('c-fp-pw-fields').style.display = '';
+  verBtn.disabled = true; verBtn.textContent = '✓';
+  showMsg(msg, '', '');
+}
+
+async function cFpResetPassword() {
+  const email   = _otpState.c_fp.email;
+  const otp     = _otpState.c_fp.otp;
+  const newPass = document.getElementById('c-fp-newpass').value.trim();
+  const confirm = document.getElementById('c-fp-confirm').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+
+  if (!newPass || !confirm)   { showMsg(msg, 'Please fill both password fields.', 'err'); return; }
+  if (newPass !== confirm)    { showMsg(msg, 'Passwords do not match.', 'err'); return; }
+
+  setBtnLoading('c-fp-reset-btn', true, 'Resetting…');
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify',
+                               { email, otp, new_password: newPass, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err');
+      return;
+    }
+    showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
+    setTimeout(() => showCandidateView('login'), 2000);
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    setBtnLoading('c-fp-reset-btn', false, 'Reset Password');
+  }
+}
+
+/* ─── RECRUITER SIGNUP OTP ─────────────────────────────────── */
+
+async function rSuSendOtp(isResend = false) {
+  const email   = document.getElementById('r-su-email').value.trim();
+  const msg     = document.getElementById('r-signup-msg');
+  const sendBtn = document.getElementById('r-su-send-otp-btn');
+  if (!email) { showMsg(msg, 'Please enter your email first.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
+      sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
+      return;
+    }
+    _otpState.r_su.email    = email;
+    _otpState.r_su.verified = false;
+    document.getElementById('r-su-otp-email-display').textContent = email;
+    document.getElementById('r-su-step2').style.display = '';
+    document.getElementById('r-su-otp-verified-badge').style.display = 'none';
+    document.getElementById('r-signup-btn').disabled = true;
+    _startOtpTimer('r_su', 'r-su-resend-timer', 'r-su-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent! Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function rSuVerifyOtp() {
+  const otp     = document.getElementById('r-su-otp').value.trim();
+  const email   = _otpState.r_su.email;
+  const msg     = document.getElementById('r-signup-msg');
+  const verBtn  = document.getElementById('r-su-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Verification failed'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.r_su.verified = true;
+    document.getElementById('r-su-otp-verified-badge').style.display = '';
+    document.getElementById('r-signup-btn').disabled = false;
+    verBtn.disabled = true; verBtn.textContent = '✓';
+    showMsg(msg, '✅ Email verified! You can now create your account.', 'ok');
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+/* ─── RECRUITER FORGOT PASSWORD OTP ───────────────────────── */
+
+async function rFpSendOtp(isResend = false) {
+  const email   = document.getElementById('r-fp-email').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+  const sendBtn = document.getElementById('r-fp-send-btn');
+  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    await apiPost('/api/auth/forgot-password/send-otp', { email, role: 'recruiter' });
+    _otpState.r_fp.email    = email;
+    _otpState.r_fp.verified = false;
+    document.getElementById('r-fp-otp-email-display').textContent = email;
+    document.getElementById('r-fp-step2').style.display = '';
+    document.getElementById('r-fp-pw-fields').style.display = 'none';
+    _startOtpTimer('r_fp', 'r-fp-resend-timer', 'r-fp-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent (if email is registered). Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function rFpVerifyOtp() {
+  const otp     = document.getElementById('r-fp-otp').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+  const verBtn  = document.getElementById('r-fp-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+  _otpState.r_fp.otp      = otp;
+  _otpState.r_fp.verified = true;
+  document.getElementById('r-fp-pw-fields').style.display = '';
+  verBtn.disabled = true; verBtn.textContent = '✓';
+  showMsg(msg, '', '');
+}
+
+async function rFpResetPassword() {
+  const email   = _otpState.r_fp.email;
+  const otp     = _otpState.r_fp.otp;
+  const newPass = document.getElementById('r-fp-newpass').value.trim();
+  const confirm = document.getElementById('r-fp-confirm').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+
+  if (!newPass || !confirm)   { showMsg(msg, 'Please fill both password fields.', 'err'); return; }
+  if (newPass !== confirm)    { showMsg(msg, 'Passwords do not match.', 'err'); return; }
+
+  setBtnLoading('r-fp-reset-btn', true, 'Resetting…');
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify',
+                               { email, otp, new_password: newPass, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err');
+      return;
+    }
+    showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
+    setTimeout(() => showRecruiterView('login'), 2000);
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    setBtnLoading('r-fp-reset-btn', false, 'Reset Password');
+  }
+}
+
 async function candidateSignup() {
   const fname = document.getElementById('c-su-fname').value.trim();
   const lname = document.getElementById('c-su-lname').value.trim();
@@ -4361,12 +4910,15 @@ async function candidateSignup() {
   const phone = document.getElementById('c-su-phone').value.trim();
   const pass  = document.getElementById('c-su-pass').value.trim();
   const msg   = document.getElementById('c-signup-msg');
+
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
-  if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (!_otpState.c_su.verified) { showMsg(msg, 'Please verify your email with OTP first.', 'err'); return; }
+
   setBtnLoading('c-signup-btn', true, 'Creating account…');
   showMsg(msg, 'Creating account…', 'info');
   try {
-    const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
+    const res  = await apiPost('/api/auth/candidate/signup',
+                               { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Signup failed'), 'err'); return; }
     authState.candidate.loggedIn = true;
@@ -4376,7 +4928,7 @@ async function candidateSignup() {
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
     showCandidateView('subscription');
-  } catch(e) {
+  } catch (e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
   } finally {
     setBtnLoading('c-signup-btn', false, 'Create Account');
@@ -4384,16 +4936,8 @@ async function candidateSignup() {
 }
 
 async function candidateForgot() {
-  const email = document.getElementById('c-fp-email').value.trim();
-  const msg   = document.getElementById('c-forgot-msg');
-  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
-  showMsg(msg, 'Sending…', 'info');
-  try {
-    await apiPost('/api/auth/candidate/forgot', { email });
-    showMsg(msg, '✅ Reset link sent! Check your email.', 'ok');
-  } catch(e) {
-    showMsg(msg, '✅ Reset link sent! Check your email.', 'ok');
-  }
+  // Delegate to the new OTP-based flow
+  await cFpSendOtp();
 }
 
 function _applyCandidateSubscription(sub) {
@@ -4547,12 +5091,15 @@ async function recruiterSignup() {
   const phone = document.getElementById('r-su-phone').value.trim();
   const pass  = document.getElementById('r-su-pass').value.trim();
   const msg   = document.getElementById('r-signup-msg');
+
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
-  if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (!_otpState.r_su.verified) { showMsg(msg, 'Please verify your email with OTP first.', 'err'); return; }
+
   setBtnLoading('r-signup-btn', true, 'Creating account…');
   showMsg(msg, 'Creating account…', 'info');
   try {
-    const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
+    const res  = await apiPost('/api/auth/recruiter/signup',
+                               { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Signup failed'), 'err'); return; }
     authState.recruiter.loggedIn = true;
@@ -4563,7 +5110,7 @@ async function recruiterSignup() {
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('recruiter');
     showRecruiterView('subscription');
-  } catch(e) {
+  } catch (e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
   } finally {
     setBtnLoading('r-signup-btn', false, 'Create Account');
@@ -4571,12 +5118,8 @@ async function recruiterSignup() {
 }
 
 async function recruiterForgot() {
-  const email = document.getElementById('r-fp-email').value.trim();
-  const msg   = document.getElementById('r-forgot-msg');
-  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
-  showMsg(msg, 'Sending…', 'info');
-  try { await apiPost('/api/auth/recruiter/forgot', { email }); } catch(e) {}
-  showMsg(msg, '✅ Reset link sent! Check your email.', 'ok');
+  // Delegate to the new OTP-based flow
+  await rFpSendOtp();
 }
 
 async function activateRecruiterPlan(plan) {
