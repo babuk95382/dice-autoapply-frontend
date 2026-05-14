@@ -4564,27 +4564,37 @@ async function candidateLogin() {
     lockToRole('candidate');
 
     // ── Restore saved Dice settings from login response immediately ──
-    // The backend includes saved_details (with dice_password) in the login
-    // response so we don't need a separate API call — settings appear
-    // instantly and automation can start without re-entering the password.
+    // The backend includes saved_details in the login response so we don't
+    // need a separate API call — settings appear instantly and automation
+    // can start without re-entering the password.
+    // Backend now returns both dice_password_decrypted (canonical) and
+    // dice_password (alias) — prefer dice_password_decrypted.
     const sd = data.user?.saved_details;
     if (sd) {
       if (sd.dice_email) {
         document.getElementById('s-email').value = sd.dice_email;
         _updateLockedEmailDisplay(sd.dice_email);
       }
-      if (sd.dice_password) {
-        _selfDicePassword = sd.dice_password;
+      // dice_password_decrypted is the canonical field from the fixed backend.
+      // dice_password is kept as a fallback for any older response shape.
+      const storedPass = sd.dice_password_decrypted || sd.dice_password || '';
+      if (storedPass) {
+        _selfDicePassword = storedPass;
         // Pre-fill the password field so the user sees it's already saved.
         // Mark as clean — we only send it back if the user edits it.
         const passEl = document.getElementById('s-pass');
         if (passEl) {
-          passEl.value = sd.dice_password;
+          passEl.value = storedPass;
           passEl.addEventListener('input', _markPassDirty, { once: true });
         }
         _selfPassDirty = false;
         const hint = document.getElementById('s-pass-hint');
         if (hint) hint.style.display = '';
+      } else if (sd.password_set || sd.has_password) {
+        // Password exists in DB but wasn't decrypted (edge case) — show hint only.
+        const hint = document.getElementById('s-pass-hint');
+        if (hint) hint.style.display = '';
+        _selfPassDirty = false;
       }
       if (sd.searches && sd.searches.length)  { selfTags = sd.searches; renderSelfTags(); }
       if (sd.max_pages)   document.getElementById('s-pages').value = sd.max_pages;
@@ -4594,20 +4604,29 @@ async function candidateLogin() {
       if (sd.easy_apply !== undefined) document.getElementById('s-easy').value = sd.easy_apply ? 'true' : 'false';
     }
 
-    if (data.user.subscription && data.user.subscription.days_left > 0) {
-      _applyCandidateSubscription(data.user.subscription);
+    const sub = data.user.subscription;
+    if (sub && sub.days_left > 0) {
+      // Active subscription (trial or paid) — go to dashboard
+      _applyCandidateSubscription(sub);
       showCandidateView('setup');
       sidebarSetActive('dashboard', false);
-    } else if (data.user.subscription && data.user.subscription.days_left <= 0) {
-      // Subscription exists but is expired — show expired state in dashboard
-      _applyCandidateSubscription({ plan: data.user.subscription.plan, days_left: 0, status: 'expired' });
-      showCandidateView('setup');
-      // If the expired plan was the free trial, update expired banner message
+    } else if (sub && (sub.free_trial_used || sub.trial_expired || sub.redirect === 'subscription')) {
+      // Trial was used and is now expired — NEVER allow re-activation.
+      // Backend sets free_trial_used=true permanently; frontend must redirect to subscription page.
+      _applyCandidateSubscription({ plan: sub.plan || 'trial', days_left: 0, status: 'expired', free_trial_used: true });
       const expDesc = document.getElementById('c-expired-desc');
-      if (expDesc && data.user.subscription.plan === 'trial') {
-        expDesc.textContent = 'Free trial expired. Please purchase a subscription to continue automating your job applications.';
+      if (expDesc) {
+        expDesc.textContent = sub.message || 'Free trial expired. Please purchase a subscription to continue automating your job applications.';
       }
+      showCandidateView('subscription');
+      // Immediately disable the trial button so it cannot be re-activated
+      _refreshCandidateTrialButtonState();
+    } else if (sub && sub.days_left <= 0) {
+      // Paid subscription expired (no free_trial_used flag) — show expired dashboard state
+      _applyCandidateSubscription({ plan: sub.plan, days_left: 0, status: 'expired' });
+      showCandidateView('setup');
     } else {
+      // No subscription at all — go to subscription page
       showCandidateView('subscription');
     }
   } catch(e) {
@@ -5669,14 +5688,19 @@ async function _refreshCandidateTrialButtonState() {
       if (trialCard) trialCard.style.display = 'none';
       return;
     }
-    // If trial_expired (or any prior trial record exists), mark button as used
-    if (data.trial_expired) {
+    // If free_trial_used OR trial_expired — permanently disable the button.
+    // Backend sets free_trial_used=true forever; we must never re-enable this.
+    if (data.free_trial_used || data.trial_expired) {
       btn.disabled = true;
       btn.textContent = 'Trial Already Used';
       btn.title = 'Free trial has already been used for this account. Please purchase a subscription.';
       btn.classList.remove('plan-btn-outline');
       btn.style.opacity = '0.5';
       btn.style.cursor  = 'not-allowed';
+    }
+    // If backend says redirect to subscription (expired trial, no paid sub), enforce it
+    if (data.redirect === 'subscription' && !data.active) {
+      showCandidateView('subscription');
     }
   } catch(e) {
     // Network error — leave button as-is
@@ -5735,9 +5759,14 @@ async function activatePlan(plan) {
           btn.style.opacity = '0.5';
           btn.style.cursor  = 'not-allowed';
         }
+        // If backend confirms trial was already used, permanently disable
+        if (data.free_trial_used) {
+          _refreshCandidateTrialButtonState();
+        }
         return;
       }
-      _applyCandidateSubscription({ plan:'trial', days_left: data.days || 3, status:'active' });
+      // Backend confirms trial activated — apply subscription
+      _applyCandidateSubscription({ plan:'trial', days_left: data.days || 3, status:'active', free_trial_used: true });
       toast('✅ Free trial activated! 3 days of full access.', 'ok', 5000);
       showCandidateView('setup');
     } catch(e) {
@@ -5928,8 +5957,23 @@ async function saveCandidateDetails() {
 
   try {
     const res = await apiPost('/api/candidate/details', payload);
-    if (res.ok) {
+    const data = await res.json();
+    if (res.ok && data.ok) {
       toast('✅ Details saved successfully.', 'ok');
+
+      // Sync in-memory password from the save response.
+      // Backend now returns dice_password_decrypted (the canonical stored value)
+      // regardless of whether the user sent a new one — this covers the case
+      // where the password already existed in DB and wasn't re-sent.
+      const returnedPass = data.dice_password_decrypted || '';
+      if (returnedPass) {
+        _selfDicePassword = returnedPass;
+        const passEl = document.getElementById('s-pass');
+        if (passEl && passEl.value !== returnedPass) passEl.value = returnedPass;
+        const hint = document.getElementById('s-pass-hint');
+        if (hint) hint.style.display = '';
+      }
+
       // If we just saved a new password, reset the dirty flag
       if (_selfPassDirty && pass) {
         _selfPassDirty = false;
@@ -5941,8 +5985,7 @@ async function saveCandidateDetails() {
       // Update locked email display
       _updateLockedEmailDisplay(email);
     } else {
-      const d = await res.json();
-      toast('❌ ' + (d.error || 'Save failed'), 'err');
+      toast('❌ ' + (data.error || 'Save failed'), 'err');
     }
   } catch(e) { toast('Network error while saving.', 'err'); }
 }
@@ -6001,15 +6044,18 @@ async function loadCandidateDetailsFromDB(userId) {
       }
 
       // Restore decrypted password from DB.
+      // Backend now returns both dice_password_decrypted (canonical) and
+      // dice_password (alias). Prefer dice_password_decrypted.
       // • Pre-fill the UI field so the user never has to type it again.
       // • Keep in-memory copy for startJob.
       // • Mark as clean — we only send it back when the user edits it.
       const passEl = document.getElementById('s-pass');
       const hint   = document.getElementById('s-pass-hint');
-      if (d.dice_password) {
-        _selfDicePassword = d.dice_password;
+      const storedPass = d.dice_password_decrypted || d.dice_password || '';
+      if (storedPass) {
+        _selfDicePassword = storedPass;
         if (passEl) {
-          passEl.value = d.dice_password;
+          passEl.value = storedPass;
           // Listen for edits: mark dirty only when user types something new
           passEl.addEventListener('input', _markPassDirty, { once: true });
         }
@@ -6294,17 +6340,22 @@ async function startJob(jobMode) {
 
   if (jobMode === 'self') {
     const email = document.getElementById('s-email').value.trim();
-    // Backend always injects the stored DB password — we don't need to send it.
-    // We still read the field in case the user typed a fresh override; otherwise
-    // we rely on the in-memory copy restored from DB on login/load.
+    // Backend always fetches the stored encrypted password from DB — we never
+    // need to send it again after the first save. We still read the field in
+    // case the user typed a fresh override; otherwise we rely on the in-memory
+    // copy restored from DB on login/load.
     const typedPass = document.getElementById('s-pass').value.trim();
     const pass = typedPass || _selfDicePassword;
     if (!email) {
       toast('Enter your Dice email before starting.', 'err');
       return;
     }
-    if (!pass) {
-      toast('Enter your Dice password before starting (only needed once).', 'err');
+    // Only block if there is truly no password anywhere:
+    // no typed value, no in-memory copy, and no s-pass-hint visible (which
+    // indicates the backend confirmed a password exists in DB).
+    const hintVisible = (document.getElementById('s-pass-hint')?.style.display !== 'none');
+    if (!pass && !hintVisible) {
+      toast('Enter your Dice password before starting (only needed once — it will be saved automatically).', 'err');
       return;
     }
     if (selfTags.length === 0) {
@@ -6424,11 +6475,16 @@ async function startJob(jobMode) {
     if (runBtn)  runBtn.disabled = false;
     if (stopBtn) stopBtn.classList.remove('visible');
     if (res.status === 403) {
-      // Dice email mismatch — redirect to subscription
+      // Redirect to subscription page — could be Dice email mismatch or expired/used trial
       if (data.redirect === 'subscription') {
         toast('⛔ ' + data.error, 'err', 6000);
-        if (jobMode === 'self') showCandidateView('subscription');
-        else showRecruiterView('login');
+        if (jobMode === 'self') {
+          // If trial expired, refresh button state before showing subscription view
+          if (data.free_trial_used || data.trial_expired) {
+            await _refreshCandidateTrialButtonState();
+          }
+          showCandidateView('subscription');
+        } else showRecruiterView('login');
         return;
       }
       toast('⚠️ ' + data.error, 'err', 6000);
@@ -6442,6 +6498,7 @@ async function startJob(jobMode) {
   // Auto-save candidate details on successful start (non-blocking).
   // Intentionally omits dice_password — the backend already has it encrypted
   // and will preserve it unchanged when the field is absent/empty.
+  // We read the save response to keep _selfDicePassword in sync.
   if (jobMode === 'self' && authState.candidate.user?.id) {
     apiPost('/api/candidate/details', {
       dice_email:  cfg.email,
@@ -6451,6 +6508,19 @@ async function startJob(jobMode) {
       date_filter: cfg.date_filter,
       employment:  cfg.employment,
       easy_apply:  cfg.easy_apply,
+    }).then(async r => {
+      if (r.ok) {
+        const d = await r.json().catch(() => ({}));
+        // Sync in-memory password from the response so it's always fresh.
+        const rp = d.dice_password_decrypted || '';
+        if (rp && !_selfDicePassword) {
+          _selfDicePassword = rp;
+          const passEl = document.getElementById('s-pass');
+          if (passEl && !passEl.value) passEl.value = rp;
+          const hint = document.getElementById('s-pass-hint');
+          if (hint) hint.style.display = '';
+        }
+      }
     }).catch(() => {});
   }
 
