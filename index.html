@@ -5962,14 +5962,21 @@ async function saveCandidateDetails() {
       toast('✅ Details saved successfully.', 'ok');
 
       // Sync in-memory password from the save response.
-      // Backend now returns dice_password_decrypted (the canonical stored value)
-      // regardless of whether the user sent a new one — this covers the case
-      // where the password already existed in DB and wasn't re-sent.
-      const returnedPass = data.dice_password_decrypted || '';
+      // Backend returns dice_password_decrypted at the top level AND inside
+      // data.details (updated response shape). Read both so either backend
+      // version works transparently.
+      const returnedPass = data.dice_password_decrypted
+                        || (data.details && data.details.dice_password_decrypted)
+                        || (data.details && data.details.dice_password)
+                        || '';
       if (returnedPass) {
         _selfDicePassword = returnedPass;
         const passEl = document.getElementById('s-pass');
         if (passEl && passEl.value !== returnedPass) passEl.value = returnedPass;
+        const hint = document.getElementById('s-pass-hint');
+        if (hint) hint.style.display = '';
+      } else if (data.password_set || (data.details && data.details.password_set)) {
+        // Password confirmed saved in DB but not returned (edge case) — show hint.
         const hint = document.getElementById('s-pass-hint');
         if (hint) hint.style.display = '';
       }
@@ -6511,12 +6518,22 @@ async function startJob(jobMode) {
     }).then(async r => {
       if (r.ok) {
         const d = await r.json().catch(() => ({}));
-        // Sync in-memory password from the response so it's always fresh.
-        const rp = d.dice_password_decrypted || '';
-        if (rp && !_selfDicePassword) {
+        // Sync in-memory password from the auto-save response.
+        // Read from top-level OR data.details (new backend shape).
+        const rp = d.dice_password_decrypted
+               || (d.details && d.details.dice_password_decrypted)
+               || (d.details && d.details.dice_password)
+               || '';
+        if (rp) {
+          // Always update — ensures _selfDicePassword stays in sync even
+          // if it was already set from a previous load.
           _selfDicePassword = rp;
           const passEl = document.getElementById('s-pass');
           if (passEl && !passEl.value) passEl.value = rp;
+          const hint = document.getElementById('s-pass-hint');
+          if (hint) hint.style.display = '';
+        } else if (d.password_set || (d.details && d.details.password_set)) {
+          // Password confirmed in DB but not returned — show hint at minimum.
           const hint = document.getElementById('s-pass-hint');
           if (hint) hint.style.display = '';
         }
