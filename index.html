@@ -3091,7 +3091,7 @@ select,
           <div class="seb-icon">🔒</div>
           <div class="seb-text">
             <div class="seb-title">Subscription Expired</div>
-            <div class="seb-desc">Your subscription has expired. Automation is disabled until you renew. All your settings and history are safely preserved.</div>
+            <div class="seb-desc" id="c-expired-desc">Your subscription has expired. Automation is disabled until you renew. All your settings and history are safely preserved.</div>
           </div>
           <button class="seb-cta" onclick="showCandidateView('subscription')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -3169,7 +3169,7 @@ select,
                   <input id="s-pass" type="password" placeholder="••••••••" autocomplete="current-password">
                   <button type="button" class="pw-toggle" onclick="togglePw('s-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                 </div>
-                <div id="s-pass-hint" style="font-size:11px;color:var(--text3);margin-top:4px;display:none">✅ Password previously saved — re-enter to update</div>
+                <div id="s-pass-hint" style="font-size:11px;color:var(--green);margin-top:4px;display:none">🔒 Password saved — edit the field above to change it</div>
               </div>
             </div>
           </div>
@@ -3574,7 +3574,7 @@ select,
           <div class="seb-icon">🔒</div>
           <div class="seb-text">
             <div class="seb-title">Recruiter Subscription Expired</div>
-            <div class="seb-desc">Your subscription has expired. Bulk automation is disabled. Renew to continue managing your candidates.</div>
+            <div class="seb-desc" id="r-expired-desc">Your subscription has expired. Bulk automation is disabled. Renew to continue managing your candidates.</div>
           </div>
           <button class="seb-cta" onclick="showRecruiterView('subscription')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -4368,16 +4368,14 @@ select,
 'use strict';
 // ═══════════════════════════════════════════════════════
 //  SECURITY MODEL (updated):
-//  • Dice passwords are stored server-side encrypted with Fernet.
-//  • On every authenticated load, the backend decrypts and returns
-//    each candidate's password (over HTTPS only) so the recruiter
-//    never needs to re-enter it.
-//  • The decrypted value is cached in localStorage under key 'rc_pw'
-//    (keyed by candidate UUID) as a performance/UX optimisation.
-//    This survives tab/browser close and is cleared on logout.
-//  • localStorage is appropriate here because: (a) passwords are
-//    already available from the server on every login, and (b) the
-//    alternative (asking every time) is worse UX with no security gain.
+//  • Dice passwords are stored server-side encrypted with Fernet (AES-256).
+//  • On every authenticated load, the backend decrypts and returns each
+//    candidate's password (over HTTPS only) so the recruiter never needs
+//    to re-enter it after the first save.
+//  • The decrypted value is cached in-memory only (_sessionPassword on each
+//    rcCandidates entry) and is re-populated on every loadRecruiterCandidates()
+//    call.  No localStorage is used — the DB is the single source of truth.
+//    On logout, in-memory passwords are wiped via _rcClearSessionPasses().
 // ═══════════════════════════════════════════════════════
 
 // ── Backend API base URL ──────────────────────────────
@@ -4541,6 +4539,9 @@ function showCandidateView(view) {
   if (view === 'setup') {
     loadCandidateDetailsFromDB(authState.candidate.user?.id);
   }
+  if (view === 'subscription') {
+    _refreshCandidateTrialButtonState();
+  }
 }
 
 async function candidateLogin() {
@@ -4574,6 +4575,14 @@ async function candidateLogin() {
       }
       if (sd.dice_password) {
         _selfDicePassword = sd.dice_password;
+        // Pre-fill the password field so the user sees it's already saved.
+        // Mark as clean — we only send it back if the user edits it.
+        const passEl = document.getElementById('s-pass');
+        if (passEl) {
+          passEl.value = sd.dice_password;
+          passEl.addEventListener('input', _markPassDirty, { once: true });
+        }
+        _selfPassDirty = false;
         const hint = document.getElementById('s-pass-hint');
         if (hint) hint.style.display = '';
       }
@@ -4590,8 +4599,14 @@ async function candidateLogin() {
       showCandidateView('setup');
       sidebarSetActive('dashboard', false);
     } else if (data.user.subscription && data.user.subscription.days_left <= 0) {
+      // Subscription exists but is expired — show expired state in dashboard
       _applyCandidateSubscription({ plan: data.user.subscription.plan, days_left: 0, status: 'expired' });
       showCandidateView('setup');
+      // If the expired plan was the free trial, update expired banner message
+      const expDesc = document.getElementById('c-expired-desc');
+      if (expDesc && data.user.subscription.plan === 'trial') {
+        expDesc.textContent = 'Free trial expired. Please purchase a subscription to continue automating your job applications.';
+      }
     } else {
       showCandidateView('subscription');
     }
@@ -4927,7 +4942,16 @@ async function candidateSignup() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
-    showCandidateView('subscription');
+    // Trial is auto-activated at signup by the backend — apply it and go straight to setup
+    if (data.user.subscription && data.user.subscription.days_left > 0) {
+      _applyCandidateSubscription(data.user.subscription);
+      toast('✅ Your 3-day free trial has started!', 'ok', 5000);
+      showCandidateView('setup');
+      sidebarSetActive('dashboard', false);
+    } else {
+      // Fallback: show subscription page (should not normally occur)
+      showCandidateView('subscription');
+    }
   } catch (e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
   } finally {
@@ -5012,7 +5036,13 @@ function _applyCandidateSubscription(sub) {
 function candidateLogout() {
   authState.candidate = { loggedIn: false, user: null, plan: null };
   selfTags = [];
-  _selfDicePassword = '';   // clear in-memory password on logout
+  _selfDicePassword = '';     // clear in-memory password on logout
+  _selfPassDirty    = false;  // reset dirty flag
+  // Clear the pre-filled password field so it doesn't linger after logout
+  const passEl = document.getElementById('s-pass');
+  if (passEl) passEl.value = '';
+  const hint = document.getElementById('s-pass-hint');
+  if (hint) hint.style.display = 'none';
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
   stopRecruiterPolling();
@@ -5046,6 +5076,9 @@ function showRecruiterView(view) {
     loadRecruiterCandidates();
     setTimeout(() => loadRecruiterReport(), 500);
   }
+  if (view === 'subscription') {
+    _refreshRecruiterTrialButtonState();
+  }
 }
 
 async function recruiterLogin() {
@@ -5074,6 +5107,11 @@ async function recruiterLogin() {
     } else if (data.user.subscription && data.user.subscription.days_left <= 0) {
       _applyRecruiterSubscription({ plan: data.user.subscription.plan, days_left: 0, status: 'expired' });
       showRecruiterView('setup');
+      // If the expired plan was the free trial, update expired banner message
+      const expDescR = document.getElementById('r-expired-desc');
+      if (expDescR && ['recruiter_trial', 'trial'].includes(data.user.subscription.plan)) {
+        expDescR.textContent = 'Free trial expired. Please purchase a subscription to continue managing your candidates.';
+      }
     } else {
       showRecruiterView('subscription');
     }
@@ -5109,7 +5147,16 @@ async function recruiterSignup() {
     renderSidebar('recruiter');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('recruiter');
-    showRecruiterView('subscription');
+    // Trial is auto-activated at signup by the backend — apply it and go straight to setup
+    if (data.user.subscription && data.user.subscription.days_left > 0) {
+      _applyRecruiterSubscription(data.user.subscription);
+      toast('✅ Your 3-day free trial has started!', 'ok', 5000);
+      showRecruiterView('setup');
+      sidebarSetActive('dashboard', false);
+    } else {
+      // Fallback: show subscription page (should not normally occur)
+      showRecruiterView('subscription');
+    }
   } catch (e) {
     showMsg(msg, '❌ Network error. Please try again.', 'err');
   } finally {
@@ -5136,11 +5183,23 @@ async function activateRecruiterPlan(plan) {
     try {
       const res  = await apiPost('/api/subscription/create-order', { plan: plan });
       const data = await res.json();
-      if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); return; }
+      if (!res.ok) {
+        toast('❌ ' + (data.error || 'Could not activate trial'), 'err');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Trial Already Used';
+          btn.style.opacity = '0.5';
+          btn.style.cursor  = 'not-allowed';
+        }
+        return;
+      }
+      _applyRecruiterSubscription({ plan: plan, days_left: data.days || 3, status: 'active' });
       toast('✅ Free trial activated!', 'ok');
       showRecruiterView('setup');
-    } catch(e) { toast('Network error', 'err'); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
+    } catch(e) {
+      toast('Network error', 'err');
+      if (btn) { btn.disabled = false; btn.textContent = 'Start Free Trial'; }
+    }
   } else {
     await openRazorpay('recruiter', plan, user);
     if (btn) {
@@ -5592,6 +5651,66 @@ function toggleSbKeyVisibility() {
 }
 
 // ═══════════════════════════════════════════════════════
+//  TRIAL BUTTON STATE HELPERS
+//  Check /api/subscription/status and disable/replace the
+//  "Start Free Trial" button if the trial has already been used.
+// ═══════════════════════════════════════════════════════
+async function _refreshCandidateTrialButtonState() {
+  const btn = document.getElementById('c-trial-btn');
+  if (!btn) return;
+  // Only check if logged in
+  if (!authState.candidate.loggedIn) return;
+  try {
+    const res  = await fetch('/api/subscription/status', { credentials: 'include' });
+    const data = await res.json();
+    // If active (trial or paid), hide trial card entirely
+    if (data.active) {
+      const trialCard = btn.closest('.plan-card-v2');
+      if (trialCard) trialCard.style.display = 'none';
+      return;
+    }
+    // If trial_expired (or any prior trial record exists), mark button as used
+    if (data.trial_expired) {
+      btn.disabled = true;
+      btn.textContent = 'Trial Already Used';
+      btn.title = 'Free trial has already been used for this account. Please purchase a subscription.';
+      btn.classList.remove('plan-btn-outline');
+      btn.style.opacity = '0.5';
+      btn.style.cursor  = 'not-allowed';
+    }
+  } catch(e) {
+    // Network error — leave button as-is
+  }
+}
+
+async function _refreshRecruiterTrialButtonState() {
+  const btn = document.getElementById('r-trial-btn');
+  if (!btn) return;
+  if (!authState.recruiter.loggedIn) return;
+  try {
+    const res  = await fetch('/api/subscription/status', { credentials: 'include' });
+    const data = await res.json();
+    // If active (trial or paid), hide trial card entirely
+    if (data.active) {
+      const trialCard = document.getElementById('r-trial-card');
+      if (trialCard) trialCard.style.display = 'none';
+      return;
+    }
+    // If trial_expired, mark button as used
+    if (data.trial_expired) {
+      btn.disabled = true;
+      btn.textContent = 'Trial Already Used';
+      btn.title = 'Free trial has already been used for this account. Please purchase a subscription.';
+      btn.classList.remove('plan-btn-outline');
+      btn.style.opacity = '0.5';
+      btn.style.cursor  = 'not-allowed';
+    }
+  } catch(e) {
+    // Network error — leave button as-is
+  }
+}
+
+// ═══════════════════════════════════════════════════════
 //  SUBSCRIPTION / RAZORPAY
 // ═══════════════════════════════════════════════════════
 async function activatePlan(plan) {
@@ -5610,7 +5729,12 @@ async function activatePlan(plan) {
       const data = await res.json();
       if (!res.ok) {
         toast('❌ ' + (data.error || 'Could not activate trial'), 'err');
-        if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; }
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Trial Already Used';
+          btn.style.opacity = '0.5';
+          btn.style.cursor  = 'not-allowed';
+        }
         return;
       }
       _applyCandidateSubscription({ plan:'trial', days_left: data.days || 3, status:'active' });
@@ -5638,7 +5762,7 @@ async function openRazorpay(userType, planKey, user) {
   if (loadingEl) loadingEl.style.display = '';
 
   try {
-    const res  = await apiPost('/api/subscription/create-order', { plan:planKey });
+    const res  = await apiPost('/api/subscription/create-order', { plan: planKey });
     const data = await res.json();
     if (!res.ok) {
       if (loadingEl) loadingEl.style.display = 'none';
@@ -5663,21 +5787,88 @@ async function openRazorpay(userType, planKey, user) {
       description: data.plan_label || planLabelMap[planKey] || planKey,
       handler: async function(response) {
         if (loadingEl) loadingEl.style.display = '';
-        const vRes  = await apiPost('/api/subscription/verify', {
-          razorpay_order_id:   response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature:  response.razorpay_signature,
-          plan: planKey,
-        });
-        const vData = await vRes.json();
+
+        // ── Verify payment with backend ─────────────────────────────
+        // Note: plan is sent as a hint only; the backend now validates
+        // the authoritative plan from Razorpay order notes (Fix 5).
+        let vRes, vData;
+        try {
+          vRes  = await apiPost('/api/subscription/verify', {
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature:  response.razorpay_signature,
+            plan: planKey,   // hint — backend overrides from order notes if mismatched
+          });
+          vData = await vRes.json();
+        } catch (netErr) {
+          if (loadingEl) loadingEl.style.display = 'none';
+          toast(
+            '⚠️ Payment was received but we could not reach the server to confirm. ' +
+            'Please refresh — if your subscription is not active within 1 minute, contact support.',
+            'err',
+            10000
+          );
+          return;
+        }
+
         if (loadingEl) loadingEl.style.display = 'none';
-        if (!vRes.ok) { toast('❌ Payment verification failed: ' + (vData.error||''), 'err'); return; }
+
+        // ── Fix 1: Handle "already processed" as a success ─────────
+        if (vData.ok && vData.message === 'Payment already processed') {
+          toast('✅ Subscription already active — you’re good to go!', 'ok', 5000);
+          if (userType === 'candidate') {
+            showCandidateView('setup');
+          } else {
+            showRecruiterView('setup');
+          }
+          return;
+        }
+
+        // ── Fix 4: Surface specific backend validation errors ───────
+        if (!vRes.ok || !vData.ok) {
+          const errMsg = vData.error || 'Payment verification failed';
+
+          if (vRes.status === 502) {
+            // Razorpay API was unreachable on the backend side
+            toast(
+              '⚠️ ' + errMsg + ' — Payment may still be processing. ' +
+              'Please wait a moment and refresh, or contact support if the issue persists.',
+              'err',
+              10000
+            );
+          } else if (errMsg.toLowerCase().includes('not captured')) {
+            toast('❌ Payment was not captured by Razorpay. Please try again or use a different payment method.', 'err', 7000);
+          } else if (errMsg.toLowerCase().includes('amount')) {
+            toast('❌ Payment amount mismatch detected. Please contact support@diceautoapply.com with your payment ID: ' + response.razorpay_payment_id, 'err', 10000);
+          } else if (errMsg.toLowerCase().includes('currency')) {
+            toast('❌ Invalid payment currency. Only INR payments are accepted.', 'err', 7000);
+          } else {
+            toast('❌ ' + errMsg, 'err', 7000);
+          }
+          return;
+        }
+
+        // ── Success: use server-confirmed plan and days ─────────────
+        // Fix 5: Backend may have overridden plan_key from order notes
+        const confirmedPlan = vData.plan || planKey;
+        const confirmedDays = vData.days;
+
         toast('✅ ' + (vData.message || 'Subscription activated!'), 'ok', 5000);
         if (userType === 'candidate') {
-          _applyCandidateSubscription({ plan:planKey, days_left:vData.days, status:'active', expires_at: vData.expires_at });
+          _applyCandidateSubscription({
+            plan:       confirmedPlan,
+            days_left:  confirmedDays,
+            status:     'active',
+            expires_at: vData.expires_at,
+          });
           showCandidateView('setup');
         } else {
-          _applyRecruiterSubscription({ plan:planKey, days_left:vData.days, status:'active', expires_at: vData.expires_at });
+          _applyRecruiterSubscription({
+            plan:       confirmedPlan,
+            days_left:  confirmedDays,
+            status:     'active',
+            expires_at: vData.expires_at,
+          });
           showRecruiterView('setup');
         }
       },
@@ -5701,7 +5892,7 @@ async function openRazorpay(userType, planKey, user) {
     rzp.open();
   } catch(e) {
     if (loadingEl) loadingEl.style.display = 'none';
-    toast('Network error: ' + e, 'err');
+    toast('❌ Network error: ' + e, 'err');
   }
 }
 
@@ -5710,8 +5901,9 @@ async function openRazorpay(userType, planKey, user) {
 // ═══════════════════════════════════════════════════════
 async function saveCandidateDetails() {
   const email = document.getElementById('s-email').value.trim();
-  const pass  = document.getElementById('s-pass').value.trim();
-  const user  = authState.candidate.user;
+  const passEl = document.getElementById('s-pass');
+  const pass   = passEl ? passEl.value.trim() : '';
+  const user   = authState.candidate.user;
   if (!email) { toast('Please enter your Dice email before saving.', 'err'); return; }
 
   const payload = {
@@ -5723,7 +5915,13 @@ async function saveCandidateDetails() {
     employment:  document.getElementById('s-etype').value,
     easy_apply:  document.getElementById('s-easy').value === 'true',
   };
-  if (pass) {
+
+  // Only send the password when the user has actively typed a new one.
+  // If _selfPassDirty is false the field still shows the pre-filled stored
+  // password, but we must NOT resend it — the backend already has it and an
+  // empty/unchanged value would not overwrite (backend guard), but sending the
+  // same value on every save is unnecessary and exposes it in the request body.
+  if (_selfPassDirty && pass) {
     payload.dice_password = pass;
     _selfDicePassword = pass;   // keep in-memory copy in sync
   }
@@ -5732,6 +5930,12 @@ async function saveCandidateDetails() {
     const res = await apiPost('/api/candidate/details', payload);
     if (res.ok) {
       toast('✅ Details saved successfully.', 'ok');
+      // If we just saved a new password, reset the dirty flag
+      if (_selfPassDirty && pass) {
+        _selfPassDirty = false;
+        // Re-attach listener for next edit
+        if (passEl) passEl.addEventListener('input', _markPassDirty, { once: true });
+      }
       showSavedBar(true);
       toggleCandidateEditMode(false);
       // Update locked email display
@@ -5774,8 +5978,12 @@ function _updateLockedEmailDisplay(lockedEmail) {
 }
 
 // In-memory Dice password — restored from DB on login/load so
-// the user never has to re-enter it after a page refresh or re-login.
+// the user NEVER has to re-enter it after a page refresh or re-login.
 let _selfDicePassword = '';
+
+// Track whether the user has actually typed a new password since the last
+// load — only send it to the backend when they have (dirty flag).
+let _selfPassDirty = false;
 
 async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
@@ -5791,16 +5999,29 @@ async function loadCandidateDetailsFromDB(userId) {
         document.getElementById('s-email').value = d.dice_email;
         _updateLockedEmailDisplay(d.dice_email);
       }
-      // Restore password from DB into memory so startJob can use it
-      // without requiring the user to type it again.
+
+      // Restore decrypted password from DB.
+      // • Pre-fill the UI field so the user never has to type it again.
+      // • Keep in-memory copy for startJob.
+      // • Mark as clean — we only send it back when the user edits it.
+      const passEl = document.getElementById('s-pass');
+      const hint   = document.getElementById('s-pass-hint');
       if (d.dice_password) {
         _selfDicePassword = d.dice_password;
-        const hint = document.getElementById('s-pass-hint');
+        if (passEl) {
+          passEl.value = d.dice_password;
+          // Listen for edits: mark dirty only when user types something new
+          passEl.addEventListener('input', _markPassDirty, { once: true });
+        }
         if (hint) hint.style.display = '';
-      } else if (d.has_password) {
-        const hint = document.getElementById('s-pass-hint');
+        _selfPassDirty = false;
+      } else if (d.has_password || d.password_set) {
+        // Password exists in DB but wasn't decrypted (edge case).
+        // Show the hint without pre-filling.
         if (hint) hint.style.display = '';
+        _selfPassDirty = false;
       }
+
       if (d.searches && d.searches.length) { selfTags = d.searches; renderSelfTags(); }
       if (d.max_pages)  document.getElementById('s-pages').value = d.max_pages;
       if (d.max_jobs)   document.getElementById('s-jobs').value  = d.max_jobs;
@@ -5811,6 +6032,14 @@ async function loadCandidateDetailsFromDB(userId) {
       toggleCandidateEditMode(false);
     }
   } catch(e) {}
+}
+
+function _markPassDirty() {
+  // Called once when the user types in the password field.
+  // Re-attach for subsequent edits.
+  _selfPassDirty = true;
+  const passEl = document.getElementById('s-pass');
+  if (passEl) passEl.addEventListener('input', _markPassDirty, { once: true });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -6065,11 +6294,17 @@ async function startJob(jobMode) {
 
   if (jobMode === 'self') {
     const email = document.getElementById('s-email').value.trim();
-    // Use typed password if provided, otherwise use the in-memory value
-    // restored from DB — so automation starts without re-entering the password.
-    const pass  = document.getElementById('s-pass').value.trim() || _selfDicePassword;
-    if (!email || !pass) {
-      toast('Enter your Dice email and password to start.', 'err');
+    // Backend always injects the stored DB password — we don't need to send it.
+    // We still read the field in case the user typed a fresh override; otherwise
+    // we rely on the in-memory copy restored from DB on login/load.
+    const typedPass = document.getElementById('s-pass').value.trim();
+    const pass = typedPass || _selfDicePassword;
+    if (!email) {
+      toast('Enter your Dice email before starting.', 'err');
+      return;
+    }
+    if (!pass) {
+      toast('Enter your Dice password before starting (only needed once).', 'err');
       return;
     }
     if (selfTags.length === 0) {
@@ -6077,7 +6312,12 @@ async function startJob(jobMode) {
       return;
     }
     cfg = {
-      mode: 'self', email, password: pass, searches: selfTags,
+      mode: 'self', email,
+      // Only include password in the request when the user explicitly typed one.
+      // The backend now always fetches the stored encrypted password from the DB
+      // and ignores whatever the frontend sends — this is belt-and-suspenders only.
+      ...(typedPass ? { password: typedPass } : {}),
+      searches: selfTags,
       max_pages:   parseInt(document.getElementById('s-pages').value),
       max_jobs:    parseInt(document.getElementById('s-jobs').value),
       date_filter: document.getElementById('s-date').value,
@@ -6133,9 +6373,9 @@ async function startJob(jobMode) {
           max_pages: parseInt(document.getElementById('r-pages').value),
           max_jobs:  parseInt(document.getElementById('r-jobs').value),
         };
-        // Include session password as a client-side fallback so the backend
-        // doesn't have to rely solely on DB decryption
-        const sp = c._sessionPassword || _rcGetSessionPass(c.id);
+        // Include in-memory password as a client-side hint (backend also
+        // fetches from DB directly, so this is belt-and-suspenders only).
+        const sp = c._sessionPassword || '';
         if (sp) acc.password = sp;
         return acc;
       }),
@@ -6199,7 +6439,9 @@ async function startJob(jobMode) {
     return;
   }
 
-  // Auto-save candidate details on successful start (non-blocking)
+  // Auto-save candidate details on successful start (non-blocking).
+  // Intentionally omits dice_password — the backend already has it encrypted
+  // and will preserve it unchanged when the field is absent/empty.
   if (jobMode === 'self' && authState.candidate.user?.id) {
     apiPost('/api/candidate/details', {
       dice_email:  cfg.email,
@@ -6469,9 +6711,9 @@ let _rcModalTags = [];
 
 function syncCandidatesFromRc() {
   candidates = rcCandidates.map(c => {
-    // PERSISTENCE FIX: Always pull from _sessionPassword (which is now populated
-    // from the DB decrypted value on every load), then fall back to sessionStorage.
-    const pw = c._sessionPassword || _rcGetSessionPass(c.id) || '';
+    // Password is sourced from _sessionPassword (populated from DB-decrypted value
+    // on every load). No localStorage fallback needed — DB is the source of truth.
+    const pw = c._sessionPassword || '';
     return {
       id:           c.id,
       name:         c.name,
@@ -6502,18 +6744,17 @@ async function loadRecruiterCandidates() {
     if (!res.ok || !data.ok) { renderRcTable(); return; }
     rcCandidates = data.candidates || [];
     rcCandidates.forEach(c => {
-      // PERSISTENCE FIX: Backend now returns dice_password_decrypted on every load.
-      // Store it directly in-memory so we never need sessionStorage as a bridge.
-      // sessionStorage is still checked as a fallback for any edge case.
+      // Backend returns the decrypted password on every load via
+      // dice_password_decrypted. Store it in-memory only — no localStorage
+      // needed since the DB is the single source of truth.
       if (c.dice_password_decrypted) {
         c._sessionPassword = c.dice_password_decrypted;
-        // Also persist to sessionStorage so it survives tab switches / re-renders
-        _rcSaveSessionPass(c.id, c.dice_password_decrypted);
-      } else {
-        const sp = _rcGetSessionPass(c.id);
-        if (sp) c._sessionPassword = sp;
+        c.password_set     = true;
+      } else if (c.password_set) {
+        // Password exists in DB but wasn't returned in this response (edge case).
+        // Leave _sessionPassword empty — startJob will trigger DB fetch on backend.
       }
-      // Never expose raw decrypted value in the DOM
+      // Never expose raw decrypted value further
       delete c.dice_password_decrypted;
     });
     renderRcTable();
@@ -6542,7 +6783,7 @@ function renderRcTable() {
     const statusCls = { Idle:'rc-status-idle', Running:'rc-status-running', Done:'rc-status-done', Stopped:'rc-status-stopped' }[c.running_status] || 'rc-status-idle';
     const updated   = c.updated_at ? formatDate(c.updated_at) : '—';
     const emailLeft = 3 - parseInt(c.email_changes || 0);
-    const hasPass   = c._sessionPassword || c.password_set || !!_rcGetSessionPass(c.id);
+    const hasPass   = c._sessionPassword || c.password_set;
     const passIcon  = hasPass
       ? '<span title="Password saved" style="color:var(--green);font-size:11px">🔒</span>'
       : '<span title="No password — click Edit" style="color:var(--amber);font-size:11px">⚠️</span>';
@@ -6576,7 +6817,7 @@ function renderRcTable() {
 
 function updateStats() {
   setStatNum('st-count',   rcCandidates.length);
-  const ready = rcCandidates.filter(c => c.dice_email && (c.password_set || c._sessionPassword || !!_rcGetSessionPass(c.id)) && c.searches?.length > 0).length;
+  const ready = rcCandidates.filter(c => c.dice_email && (c.password_set || c._sessionPassword) && c.searches?.length > 0).length;
   setStatNum('st-ready',   ready);
   setStatNum('st-searches', rcCandidates.reduce((a,c) => a + (c.searches?.length || 0), 0));
 }
@@ -6614,7 +6855,7 @@ function openEditCandidateModal(id) {
   document.getElementById('rc-modal-name').value        = c.name      || '';
   document.getElementById('rc-modal-email').value       = c.dice_email || '';
   document.getElementById('rc-modal-role').value        = c.job_role  || '';
-  const storedPass = c._sessionPassword || _rcGetSessionPass(c.id) || '';
+  const storedPass = c._sessionPassword || '';
   const hasPass  = !!storedPass || c.password_set;
   const passEl   = document.getElementById('rc-modal-pass');
   // PERSISTENCE FIX: pre-fill the password field with the stored decrypted value
@@ -6706,15 +6947,11 @@ async function saveRcCandidate() {
       return;
     }
     const savedId = rcEditingId || data.candidate?.id;
-    // PERSISTENCE FIX: The API response now includes dice_password_decrypted.
-    // Use it (or the form input) to update our in-memory and sessionStorage state
-    // BEFORE the reload so that renderRcTable immediately shows the correct icon.
+    // The API response includes dice_password_decrypted (the newly saved/kept password).
+    // Update in-memory state BEFORE reload so renderRcTable shows the correct icon.
     const returnedPass = data.candidate?.dice_password_decrypted || pass;
-    if (returnedPass && savedId) {
-      _rcSaveSessionPass(savedId, returnedPass);
-    }
     await loadRecruiterCandidates();
-    // Belt-and-suspenders: stamp the in-memory object after reload too
+    // Belt-and-suspenders: stamp the in-memory object after reload if it was missed
     if (returnedPass && savedId) {
       const c = rcCandidates.find(x => x.id === savedId);
       if (c) { c._sessionPassword = returnedPass; c.password_set = true; }
@@ -6728,26 +6965,16 @@ async function saveRcCandidate() {
   btn.disabled = false; if (label) label.textContent = rcEditingId ? 'Save Changes' : 'Save Candidate';
 }
 
-function _rcSaveSessionPass(id, pass) {
-  // PERSISTENCE FIX: use localStorage so passwords survive tab close / browser restart.
-  // They are only wiped on explicit logout (_rcClearSessionPasses).
-  try {
-    const s = JSON.parse(localStorage.getItem('rc_pw') || '{}');
-    s[id] = pass;
-    localStorage.setItem('rc_pw', JSON.stringify(s));
-  } catch(e) {}
-}
-function _rcGetSessionPass(id) {
-  try {
-    const s = JSON.parse(localStorage.getItem('rc_pw') || '{}');
-    return s[id] || '';
-  } catch(e) { return ''; }
-}
+// Recruiter candidate passwords are stored only in-memory (_sessionPassword on
+// each rcCandidates entry) and are re-populated from the DB on every
+// loadRecruiterCandidates() call.  No localStorage is used — the DB (via
+// encrypted Fernet storage on the backend) is the single source of truth.
+
 function _rcClearSessionPasses() {
-  // Called only on explicit logout — wipes persisted passwords from this device.
-  try {
-    localStorage.removeItem('rc_pw');
-  } catch(e) {}
+  // Called on explicit recruiter logout — wipe all in-memory passwords.
+  rcCandidates.forEach(c => { c._sessionPassword = ''; });
+  // Also clear any legacy localStorage entries left from older versions.
+  try { localStorage.removeItem('rc_pw'); } catch(e) {}
 }
 
 function showRcModalMsg(msg, type) {
