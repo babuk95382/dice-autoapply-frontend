@@ -2901,7 +2901,7 @@ select,
         <div class="success-banner">
           <div class="success-icon">🎉</div>
           <div class="success-text">
-            <h3>Welcome to Dice AutoApply!</h3>
+            <h3>Welcome to HireFlow!</h3>
             <p>Choose a plan below to start automating your job applications on Dice.</p>
           </div>
         </div>
@@ -4136,7 +4136,7 @@ select,
               </div>
               <div class="field">
                 <label>Sender Name</label>
-                <input id="email-sender-name" type="text" placeholder="Dice AutoApply">
+                <input id="email-sender-name" type="text" placeholder="HireFlow">
               </div>
               <div class="field">
                 <label>Sender Email</label>
@@ -5806,7 +5806,7 @@ async function openRazorpay(userType, planKey, user) {
       amount:      data.amount,
       currency:    data.currency,
       order_id:    data.order_id,
-      name:        'Dice AutoApply',
+      name:        'HireFlow',
       description: data.plan_label || planLabelMap[planKey] || planKey,
       handler: async function(response) {
         if (loadingEl) loadingEl.style.display = '';
