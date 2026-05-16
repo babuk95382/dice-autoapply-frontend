@@ -6561,15 +6561,16 @@ async function candidateSendOtp() {
   const pass  = document.getElementById('c-su-pass').value.trim();
   const msg   = document.getElementById('c-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
-  if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (pass.length < 8) { showMsg(msg, 'Password must be at least 8 characters.', 'err'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg(msg, 'Please enter a valid email address.', 'err'); return; }
   setBtnLoading('c-signup-btn', true, 'Sending OTP…');
   showMsg(msg, 'Sending OTP to your email…', 'info');
   try {
-    const res  = await apiPost('/api/auth/candidate/send-otp', { email, first_name:fname });
+    // Step 1: send OTP — uses the correct endpoint with role param
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err'); return; }
-    // Show OTP step
+    // Show OTP entry step
     document.getElementById('c-signup-step1').style.display = 'none';
     document.getElementById('c-signup-step2').style.display = '';
     document.getElementById('c-otp-email-display').textContent = email;
@@ -6590,13 +6591,20 @@ async function candidateVerifyOtp() {
   const pass  = document.getElementById('c-su-pass').value.trim();
   const otp   = document.getElementById('c-su-otp').value.trim();
   const msg   = document.getElementById('c-otp-msg');
-  if (!otp || otp.length < 4) { showMsg(msg, 'Please enter the OTP sent to your email.', 'err'); return; }
+  if (!otp || otp.length < 6) { showMsg(msg, 'Please enter the 6-digit OTP sent to your email.', 'err'); return; }
   setBtnLoading('c-otp-btn', true, 'Verifying…');
   showMsg(msg, 'Verifying OTP…', 'info');
   try {
-    const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass, otp });
+    // Step 2: verify OTP first — marks the OTP record as verified server-side
+    const vRes  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'candidate' });
+    const vData = await vRes.json();
+    if (!vRes.ok) { showMsg(msg, '❌ ' + (vData.error || 'OTP verification failed'), 'err'); return; }
+
+    // Step 3: create account now that OTP is verified
+    showMsg(msg, 'Creating your account…', 'info');
+    const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await res.json();
-    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'OTP verification failed'), 'err'); return; }
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -6613,11 +6621,13 @@ async function candidateVerifyOtp() {
 
 async function candidateResendOtp() {
   const email = document.getElementById('c-su-email').value.trim();
-  const fname = document.getElementById('c-su-fname').value.trim();
   const msg   = document.getElementById('c-otp-msg');
   showMsg(msg, 'Resending OTP…', 'info');
   try {
-    await apiPost('/api/auth/candidate/send-otp', { email, first_name:fname });
+    // Uses the correct generic endpoint with role param
+    const res = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to resend'), 'err'); return; }
     showMsg(msg, '✅ New OTP sent! Check your inbox.', 'ok');
   } catch(e) {
     showMsg(msg, '❌ Failed to resend. Please try again.', 'err');
@@ -6757,12 +6767,13 @@ async function recruiterSendOtp() {
   const pass  = document.getElementById('r-su-pass').value.trim();
   const msg   = document.getElementById('r-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
-  if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (pass.length < 8) { showMsg(msg, 'Password must be at least 8 characters.', 'err'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg(msg, 'Please enter a valid email address.', 'err'); return; }
   setBtnLoading('r-signup-btn', true, 'Sending OTP…');
   showMsg(msg, 'Sending OTP to your email…', 'info');
   try {
-    const res  = await apiPost('/api/auth/recruiter/send-otp', { email, first_name:fname });
+    // Step 1: send OTP — uses the correct endpoint with role param
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
     const data = await res.json();
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err'); return; }
     document.getElementById('r-signup-step1').style.display = 'none';
@@ -6785,13 +6796,20 @@ async function recruiterVerifyOtp() {
   const pass  = document.getElementById('r-su-pass').value.trim();
   const otp   = document.getElementById('r-su-otp').value.trim();
   const msg   = document.getElementById('r-otp-msg');
-  if (!otp || otp.length < 4) { showMsg(msg, 'Please enter the OTP sent to your email.', 'err'); return; }
+  if (!otp || otp.length < 6) { showMsg(msg, 'Please enter the 6-digit OTP sent to your email.', 'err'); return; }
   setBtnLoading('r-otp-btn', true, 'Verifying…');
   showMsg(msg, 'Verifying OTP…', 'info');
   try {
-    const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass, otp });
+    // Step 2: verify OTP — marks the record as verified server-side
+    const vRes  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'recruiter' });
+    const vData = await vRes.json();
+    if (!vRes.ok) { showMsg(msg, '❌ ' + (vData.error || 'OTP verification failed'), 'err'); return; }
+
+    // Step 3: create account now that OTP is verified
+    showMsg(msg, 'Creating your account…', 'info');
+    const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await res.json();
-    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'OTP verification failed'), 'err'); return; }
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
@@ -6809,11 +6827,12 @@ async function recruiterVerifyOtp() {
 
 async function recruiterResendOtp() {
   const email = document.getElementById('r-su-email').value.trim();
-  const fname = document.getElementById('r-su-fname').value.trim();
   const msg   = document.getElementById('r-otp-msg');
   showMsg(msg, 'Resending OTP…', 'info');
   try {
-    await apiPost('/api/auth/recruiter/send-otp', { email, first_name:fname });
+    const res = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to resend'), 'err'); return; }
     showMsg(msg, '✅ New OTP sent! Check your inbox.', 'ok');
   } catch(e) {
     showMsg(msg, '❌ Failed to resend. Please try again.', 'err');
@@ -9194,7 +9213,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">💬</span>
         <span class="c-label">WhatsApp / Phone</span>
-        <span class="c-value"><a href="https://wa.me/917330854215" target="_blank">+91 7330854215</a></span>
+        <span class="c-value"><a href="https://wa.me/91XXXXXXXXXX" target="_blank">+91 XXXXX XXXXX</a></span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon">🕐</span>
