@@ -4490,7 +4490,7 @@ select option{background:var(--s2);}
             <div class="auth-title">Create Account</div>
             <div class="auth-sub">Join as a candidate and start your recruitment journey</div>
           </div>
-          <!-- Step 1: Details form -->
+          <!-- Signup form (single-step: inline OTP verify then create account) -->
           <div class="auth-form" id="c-signup-step1">
             <div class="grid-2">
               <div class="field"><label>First Name</label><input id="c-su-fname" type="text" placeholder="Jane" autocomplete="given-name"></div>
@@ -4531,25 +4531,9 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div id="c-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="c-signup-btn" onclick="candidateSendOtp()">Send OTP &amp; Continue</button>
+            <!-- Disabled until email OTP is verified -->
+            <button class="auth-btn" id="c-signup-btn" onclick="cSuSubmitSignup()" disabled style="opacity:0.5;cursor:not-allowed;">Create Account</button>
             <div class="auth-link">Already have an account? <a onclick="showCandidateView('login')">Sign in</a></div>
-          </div>
-          <!-- Step 2: OTP verification -->
-          <div class="auth-form" id="c-signup-step2" style="display:none">
-            <div style="text-align:center;padding:8px 0 16px;">
-              <div style="font-size:2.2rem;margin-bottom:8px;">📧</div>
-              <div style="font-size:0.9rem;color:var(--text2);line-height:1.5;">We've sent a 6-digit OTP to<br><strong id="c-otp-email-display" style="color:var(--accent);"></strong></div>
-            </div>
-            <div class="field">
-              <label>Enter OTP</label>
-              <input id="c-su-otp" type="text" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;letter-spacing:0.3em;font-size:1.3rem;font-weight:700;">
-            </div>
-            <div id="c-otp-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="c-otp-btn" onclick="candidateVerifyOtp()">Verify &amp; Create Account</button>
-            <div class="auth-link" style="text-align:center;">
-              Didn't receive it? <a onclick="candidateResendOtp()" style="cursor:pointer;">Resend OTP</a>
-              &nbsp;·&nbsp; <a onclick="document.getElementById('c-signup-step1').style.display='';document.getElementById('c-signup-step2').style.display='none';" style="cursor:pointer;">Back</a>
-            </div>
           </div>
         </div>
       </div>
@@ -5008,7 +4992,7 @@ select option{background:var(--s2);}
             <div class="auth-title">Recruiter Sign Up</div>
             <div class="auth-sub">Create your recruiter account</div>
           </div>
-          <!-- Step 1: Details -->
+          <!-- Signup form (single-step: inline OTP verify then create account) -->
           <div class="auth-form" id="r-signup-step1">
             <div class="grid-2">
               <div class="field"><label>First Name</label><input id="r-su-fname" type="text" placeholder="John" autocomplete="given-name"></div>
@@ -5049,25 +5033,9 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div id="r-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="r-signup-btn" onclick="recruiterSendOtp()">Send OTP &amp; Continue</button>
+            <!-- Disabled until email OTP is verified -->
+            <button class="auth-btn" id="r-signup-btn" onclick="rSuSubmitSignup()" disabled style="opacity:0.5;cursor:not-allowed;">Create Account</button>
             <div class="auth-link">Already have an account? <a onclick="showRecruiterView('login')">Sign in</a></div>
-          </div>
-          <!-- Step 2: OTP verification -->
-          <div class="auth-form" id="r-signup-step2" style="display:none">
-            <div style="text-align:center;padding:8px 0 16px;">
-              <div style="font-size:2.2rem;margin-bottom:8px;">📧</div>
-              <div style="font-size:0.9rem;color:var(--text2);line-height:1.5;">We've sent a 6-digit OTP to<br><strong id="r-otp-email-display" style="color:var(--accent);"></strong></div>
-            </div>
-            <div class="field">
-              <label>Enter OTP</label>
-              <input id="r-su-otp" type="text" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;letter-spacing:0.3em;font-size:1.3rem;font-weight:700;">
-            </div>
-            <div id="r-otp-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="r-otp-btn" onclick="recruiterVerifyOtp()">Verify &amp; Create Account</button>
-            <div class="auth-link" style="text-align:center;">
-              Didn't receive it? <a onclick="recruiterResendOtp()" style="cursor:pointer;">Resend OTP</a>
-              &nbsp;·&nbsp; <a onclick="document.getElementById('r-signup-step1').style.display='';document.getElementById('r-signup-step2').style.display='none';" style="cursor:pointer;">Back</a>
-            </div>
           </div>
         </div>
       </div>
@@ -8971,12 +8939,42 @@ async function cSuVerifyOtp() {
     _otpState.c_su.verified = true;
     document.getElementById('c-su-otp-verified-badge').style.display = '';
     verBtn.textContent = '✓ Verified';
+    // Enable the create-account button now that OTP is verified
     const signupBtn = document.getElementById('c-signup-btn');
-    if (signupBtn) signupBtn.disabled = false;
-    showMsg(msg, '', '');
+    if (signupBtn) { signupBtn.disabled = false; signupBtn.style.opacity = '1'; signupBtn.style.cursor = 'pointer'; }
+    showMsg(msg, '✅ Email verified! Fill in your details and click Create Account.', 'ok');
   } catch (e) {
     showMsg(msg, '❌ Network error.', 'err');
     verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+async function cSuSubmitSignup() {
+  const fname = document.getElementById('c-su-fname').value.trim();
+  const lname = document.getElementById('c-su-lname').value.trim();
+  const email = _otpState.c_su.email || document.getElementById('c-su-email').value.trim();
+  const phone = document.getElementById('c-su-phone').value.trim();
+  const pass  = document.getElementById('c-su-pass').value.trim();
+  const msg   = document.getElementById('c-signup-msg');
+  if (!_otpState.c_su.verified) { showMsg(msg, '❌ Please verify your email OTP first.', 'err'); return; }
+  if (!fname || !lname || !phone || !pass) { showMsg(msg, '❌ Please fill all fields.', 'err'); return; }
+  setBtnLoading('c-signup-btn', true, 'Creating Account…');
+  showMsg(msg, 'Creating your account…', 'info');
+  try {
+    const res  = await apiPost('/api/auth/candidate/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    authState.candidate.loggedIn = true;
+    authState.candidate.user     = data.user;
+    _applyCandidateDashboard(data.user);
+    renderSidebar('candidate');
+    sidebarUpdateProfile(data.user.name || data.user.email);
+    lockToRole('candidate');
+    showCandidateView('subscription');
+  } catch (e) {
+    showMsg(msg, '❌ Network error. Please try again.', 'err');
+  } finally {
+    setBtnLoading('c-signup-btn', false, 'Create Account');
   }
 }
 
@@ -9077,12 +9075,43 @@ async function rSuVerifyOtp() {
     _otpState.r_su.verified = true;
     document.getElementById('r-su-otp-verified-badge').style.display = '';
     verBtn.textContent = '✓ Verified';
+    // Enable the create-account button now that OTP is verified
     const signupBtn = document.getElementById('r-signup-btn');
-    if (signupBtn) signupBtn.disabled = false;
-    showMsg(msg, '', '');
+    if (signupBtn) { signupBtn.disabled = false; signupBtn.style.opacity = '1'; signupBtn.style.cursor = 'pointer'; }
+    showMsg(msg, '✅ Email verified! Fill in your details and click Create Account.', 'ok');
   } catch (e) {
     showMsg(msg, '❌ Network error.', 'err');
     verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+async function rSuSubmitSignup() {
+  const fname = document.getElementById('r-su-fname').value.trim();
+  const lname = document.getElementById('r-su-lname').value.trim();
+  const email = _otpState.r_su.email || document.getElementById('r-su-email').value.trim();
+  const phone = document.getElementById('r-su-phone').value.trim();
+  const pass  = document.getElementById('r-su-pass').value.trim();
+  const msg   = document.getElementById('r-signup-msg');
+  if (!_otpState.r_su.verified) { showMsg(msg, '❌ Please verify your email OTP first.', 'err'); return; }
+  if (!fname || !lname || !phone || !pass) { showMsg(msg, '❌ Please fill all fields.', 'err'); return; }
+  setBtnLoading('r-signup-btn', true, 'Creating Account…');
+  showMsg(msg, 'Creating your account…', 'info');
+  try {
+    const res  = await apiPost('/api/auth/recruiter/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    authState.recruiter.loggedIn = true;
+    authState.recruiter.user     = data.user;
+    document.getElementById('r-dash-name').textContent   = data.user.name;
+    document.getElementById('r-dash-avatar').textContent = data.user.name[0].toUpperCase();
+    renderSidebar('recruiter');
+    sidebarUpdateProfile(data.user.name || data.user.email);
+    lockToRole('recruiter');
+    showRecruiterView('subscription');
+  } catch (e) {
+    showMsg(msg, '❌ Network error. Please try again.', 'err');
+  } finally {
+    setBtnLoading('r-signup-btn', false, 'Create Account');
   }
 }
 
