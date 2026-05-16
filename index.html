@@ -493,6 +493,115 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .auth-msg.err{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,107,107,0.2);}
 .auth-msg.info{background:rgba(124,92,252,0.08);color:var(--purple2);border:1px solid rgba(124,92,252,0.18);}
 
+/* ── OTP UI components ── */
+.otp-email-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.otp-email-row input {
+  flex: 1;
+  min-width: 0;
+}
+.otp-send-btn {
+  flex-shrink: 0;
+  padding: 0 16px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+.otp-send-btn:hover  { background: var(--accent2); color: #fff; }
+.otp-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.otp-sent-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(37,211,102,0.2);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+.otp-sent-icon { font-size: 18px; }
+
+.otp-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.otp-input-row input {
+  flex: 1;
+  letter-spacing: 6px;
+  font-size: 20px;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+}
+.otp-verify-btn {
+  flex-shrink: 0;
+  padding: 0 18px;
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.otp-verify-btn:hover    { background: var(--purple2); }
+.otp-verify-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.otp-resend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  min-height: 22px;
+}
+.otp-timer {
+  font-size: 12px;
+  color: var(--text3);
+}
+.otp-resend-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.otp-resend-btn:hover { color: var(--accent2); }
+
+.otp-verified-badge {
+  background: var(--green-dim);
+  border: 1px solid rgba(37,211,102,0.25);
+  border-radius: var(--r);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 </style>
 <style>/* dashboard.css */
 /* ══════════════════════════════════════
@@ -1793,6 +1902,10 @@ select option{background:var(--s2);}
   border-radius: var(--lp-r2);
   overflow: hidden;
   box-shadow: var(--lp-shadow2), 0 0 0 1px rgba(255,255,255,0.04);
+  width: 420px;
+  min-height: 500px;
+  transform: scale(1.15);
+  transform-origin: center;
 }
 .lp-dp-bar {
   display: flex;
@@ -1891,6 +2004,7 @@ select option{background:var(--s2);}
   min-width: 30px;
   text-align: right;
 }
+
 
 /* ══════════════════════════════════════
    SECTION COMMON
@@ -2013,6 +2127,13 @@ select option{background:var(--s2);}
   text-align: center;
   padding: 24px 16px;
 }
+.lp-step-arrow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 20px;
+  color: var(--lp-text3);
+  font-size: 1.2rem;
+}
 .lp-step-num {
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -2027,10 +2148,38 @@ select option{background:var(--s2);}
   position: relative;
   z-index: 1;
 }
-.lp-step:nth-child(1) .lp-step-num { border-color: var(--lp-accent); color: var(--lp-accent); }
-.lp-step:nth-child(2) .lp-step-num { border-color: var(--lp-purple); color: var(--lp-purple2); }
-.lp-step:nth-child(3) .lp-step-num { border-color: #60a5fa; color: #60a5fa; }
-.lp-step:nth-child(4) .lp-step-num { border-color: #f59e0b; color: #f59e0b; }
+.lp-step:nth-child(1) .lp-step-arrow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 20px;
+  color: var(--lp-text3);
+  font-size: 1.2rem;
+}
+.lp-step-num { border-color: var(--lp-accent); color: var(--lp-accent); }
+.lp-step:nth-child(2) .lp-step-arrow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 20px;
+  color: var(--lp-text3);
+  font-size: 1.2rem;
+}
+.lp-step-num { border-color: var(--lp-purple); color: var(--lp-purple2); }
+.lp-step:nth-child(3) .lp-step-arrow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 20px;
+  color: var(--lp-text3);
+  font-size: 1.2rem;
+}
+.lp-step-num { border-color: #60a5fa; color: #60a5fa; }
+.lp-step:nth-child(4) .lp-step-arrow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 20px;
+  color: var(--lp-text3);
+  font-size: 1.2rem;
+}
+.lp-step-num { border-color: #f59e0b; color: #f59e0b; }
 
 .lp-step-title {
   font-family: var(--lp-font-head);
@@ -2350,7 +2499,7 @@ select option{background:var(--s2);}
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
-  gap: 40px;
+  gap: 140px;
   margin-bottom: 48px;
 }
 .lp-footer-brand {}
@@ -2374,6 +2523,12 @@ select option{background:var(--s2);}
   color: var(--lp-accent);
   font-weight: 500;
 }
+.lp-footer-links {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 90px;
+  align-items: start;
+}
 .lp-footer-email:hover { text-decoration: underline; }
 
 .lp-footer-col {}
@@ -2391,6 +2546,7 @@ select option{background:var(--s2);}
   color: var(--lp-text2);
   margin-bottom: 10px;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 .lp-footer-col a:hover { color: var(--lp-text); }
 
@@ -2668,7 +2824,7 @@ select option{background:var(--s2);}
     <div class="lp-nav-inner">
       <a href="#" class="lp-logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
         <div class="lp-logo-icon" aria-hidden="true">⚡</div>
-        Hire<span>Flow</span>
+        FutureHire<span>Tech</span>
       </a>
       <div class="lp-nav-links" id="lp-nav-links" role="menubar">
         <a href="#features" role="menuitem">Features</a>
@@ -2733,7 +2889,7 @@ select option{background:var(--s2);}
         </div>
         <div class="lp-dp-stats">
           <div class="lp-dp-stat">
-            <div class="lp-dp-num green">247</div>
+            <div class="lp-dp-num green">47</div>
             <div class="lp-dp-lbl">Candidates</div>
           </div>
           <div class="lp-dp-stat">
@@ -2935,7 +3091,7 @@ select option{background:var(--s2);}
 
       </div>
       <p class="lp-pricing-note">
-        🛡️ 7-day refund guarantee on all paid plans · All payments secured by Razorpay · No hidden charges
+        🛡️ 7-day refund guarantee on all paid plans · All payments secured by trusted and secure payment partners · No hidden charges
       </p>
     </div>
   </section>
@@ -2993,7 +3149,7 @@ select option{background:var(--s2);}
             <div class="lp-about-card-icon" aria-hidden="true">📞</div>
             <div>
               <strong>Dedicated Support</strong>
-              <p>Professional support team available to assist with onboarding, platform usage, and any technical questions at <a href="mailto:futurehiretech@gmail.com" style="color:#25d366;">futurehiretech@gmail.com</a></p>
+              <p>Professional support team available to assist with onboarding, platform usage, and any technical questions at <a href="mailto:Support@futurehiretech.com" style="color:#25d366;">Support@futurehiretech.com</a></p>
             </div>
           </div>
         </div>
@@ -3057,7 +3213,7 @@ select option{background:var(--s2);}
                 What payment methods are accepted?
                 <span class="lp-faq-chevron" aria-hidden="true">›</span>
               </div>
-              <div class="lp-faq-a" role="region">All major credit and debit cards, UPI, net banking, and digital wallets are accepted via Razorpay — India's most trusted and secure payment gateway. All transactions are encrypted and protected by 256-bit SSL security.</div>
+              <div class="lp-faq-a" role="region">All major credit and debit cards, UPI, net banking, and digital wallets are accepted via trusted and secure payment partners — India's most trusted and secure payment gateway. All transactions are encrypted and protected by 256-bit SSL security.</div>
             </div>
 
             <div class="lp-faq-item" onclick="toggleLpFaq(this)" role="listitem" aria-expanded="false">
@@ -3073,7 +3229,7 @@ select option{background:var(--s2);}
                 How do I get support?
                 <span class="lp-faq-chevron" aria-hidden="true">›</span>
               </div>
-              <div class="lp-faq-a" role="region">Our support team is available via email at <a href="mailto:futurehiretech@gmail.com" style="color:#25d366;">futurehiretech@gmail.com</a>. Recruiter and Premium plan subscribers receive priority support with faster response times. We also provide onboarding assistance to help you get started quickly.</div>
+              <div class="lp-faq-a" role="region">Our support team is available via email at <a href="mailto:Support@futurehiretech.com" style="color:#25d366;">Support@futurehiretech.com</a>. Recruiter and Premium plan subscribers receive priority support with faster response times. We also provide onboarding assistance to help you get started quickly.</div>
             </div>
 
           </div>
@@ -3102,12 +3258,67 @@ select option{background:var(--s2);}
   <!-- ══════════════════════════════════════
        FOOTER
   ══════════════════════════════════════ -->
+
+  
+  <!-- ══════════════════════════════════════
+       CONTACT US SECTION
+  ══════════════════════════════════════ -->
+  <section class="lp-section" id="contact" aria-labelledby="contact-heading">
+    <div class="lp-container" style="max-width:860px;margin:0 auto;">
+      <p class="lp-section-label">Get In Touch</p>
+      <h2 class="lp-section-title" id="contact-heading">Contact Us</h2>
+      <p class="lp-section-sub">Have questions or need support? Reach out to us.</p>
+
+      <div style="margin-top:40px;background:var(--lp-s2);border:1px solid var(--lp-border);border-radius:16px;padding:40px 36px;">
+
+        <h3 style="font-family:var(--lp-font-head);font-size:1.15rem;font-weight:800;color:var(--lp-text);margin:0 0 24px;">FutureHireTech Technologies</h3>
+
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <div style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="flex-shrink:0;width:36px;height:36px;border-radius:9px;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">📍</div>
+            <div>
+              <p style="font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lp-text3);margin:0 0 6px;">Office Address</p>
+              <p style="font-size:0.93rem;color:var(--lp-text2);line-height:1.9;margin:0;">
+                11-86, ULLAKKI NAGAR,<br>
+                PAMUDURTHI,<br>
+                BUKKAPATNAM,<br>
+                SRI SATHYA DIST,<br>
+                ANDHRA PRADESH,<br>
+                515154.
+              </p>
+            </div>
+          </div>
+
+          <div style="height:1px;background:var(--lp-border);margin:4px 0;"></div>
+
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="flex-shrink:0;width:36px;height:36px;border-radius:9px;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);display:flex;align-items:center;justify-content:center;font-size:1rem;">✉️</div>
+            <div>
+              <p style="font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lp-text3);margin:0 0 4px;">Email</p>
+              <a href="mailto:Support@futurehiretech.com" style="font-size:0.93rem;color:var(--lp-accent);text-decoration:none;">Support@futurehiretech.com</a>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="flex-shrink:0;width:36px;height:36px;border-radius:9px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">📞</div>
+            <div>
+              <p style="font-size:0.78rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lp-text3);margin:0 0 4px;">Phone</p>
+              <a href="tel:+913355X5X" style="font-size:0.93rem;color:var(--lp-accent);text-decoration:none;">+91 7330854215</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="lp-footer" role="contentinfo">
     <div class="lp-footer-top">
       <div class="lp-footer-brand">
-        <div class="lp-footer-logo">Hire<span>Flow</span></div>
+        <div class="lp-footer-logo">FutureHire<span>Tech</span></div>
         <p>Recruitment workflow management platform for recruiters, HR teams, staffing professionals, and job seekers.</p>
-        <a href="mailto:futurehiretech@gmail.com" class="lp-footer-email" aria-label="Email HireFlow support">futurehiretech@gmail.com</a>
+        <a href="mailto:Support@futurehiretech.com" class="lp-footer-email" aria-label="Email HireFlow support">Support@futurehiretech.com</a>
       </div>
       <div class="lp-footer-links">
         <div class="lp-footer-col">
@@ -3120,25 +3331,25 @@ select option{background:var(--s2);}
         <div class="lp-footer-col">
           <h4>Support</h4>
           <a href="#faq">FAQ</a>
-          <a href="/contact">Contact Us</a>
-          <a href="mailto:futurehiretech@gmail.com">Email Support</a>
+          <a href="#contact">Contact Us</a>
+          <a href="mailto:Support@futurehiretech.com">Email Support</a>
         </div>
         <div class="lp-footer-col">
           <h4>Legal</h4>
           <a href="#" onclick="openModal('modal-privacy');return false;">Privacy Policy</a>
           <a href="#" onclick="openModal('modal-terms');return false;">Terms &amp; Conditions</a>
           <a href="#" onclick="openModal('modal-refund');return false;">Refund Policy</a>
-          <a href="/contact">Contact Us</a>
+          <a href="#contact">Contact Us</a>
         </div>
       </div>
     </div>
     <div class="lp-footer-bottom">
-      <span>© 2025 HireFlow. All rights reserved. Powered by FutureHire Technologies.</span>
+      <span>© 2026 HireFlow. All rights reserved. Powered by FutureHire Technologies.</span>
       <div class="lp-footer-legal">
         <a href="#" onclick="openModal('modal-privacy');return false;">Privacy</a>
         <a href="#" onclick="openModal('modal-terms');return false;">Terms</a>
         <a href="#" onclick="openModal('modal-refund');return false;">Refund</a>
-        <a href="/contact">Contact</a>
+        <a href="#contact">Contact</a>
       </div>
     </div>
   </footer>
@@ -3242,7 +3453,32 @@ select option{background:var(--s2);}
               <div class="field"><label>First Name</label><input id="c-su-fname" type="text" placeholder="Jane" autocomplete="given-name"></div>
               <div class="field"><label>Last Name</label><input id="c-su-lname" type="text" placeholder="Smith" autocomplete="family-name"></div>
             </div>
-            <div class="field"><label>Email</label><input id="c-su-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+            <div class="field"><label>Email</label>
+              <div class="otp-email-row">
+                <input id="c-su-email" type="email" placeholder="you@email.com" autocomplete="email">
+                <button class="otp-send-btn" id="c-su-send-otp-btn" type="button" onclick="cSuSendOtp()">Send OTP</button>
+              </div>
+            </div>
+            <div id="c-su-step2" style="display:none">
+              <div class="otp-sent-notice">
+                <span class="otp-sent-icon">📧</span>
+                <span>OTP sent to <strong id="c-su-otp-email-display"></strong></span>
+              </div>
+              <div class="field">
+                <label>Enter 6-digit OTP</label>
+                <div class="otp-input-row">
+                  <input id="c-su-otp" type="text" inputmode="numeric" maxlength="6"
+                         placeholder="000000" autocomplete="one-time-code"
+                         oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+                  <button class="otp-verify-btn" type="button" id="c-su-verify-btn" onclick="cSuVerifyOtp()">Verify</button>
+                </div>
+              </div>
+              <div class="otp-resend-row">
+                <span id="c-su-resend-timer" class="otp-timer"></span>
+                <button class="otp-resend-btn" id="c-su-resend-btn" type="button" style="display:none" onclick="cSuSendOtp(true)">Resend OTP</button>
+              </div>
+              <div id="c-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✅ Email verified!</div>
+            </div>
             <div class="field"><label>Contact Number</label><input id="c-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
             <div class="field">
               <label>Password</label>
@@ -3252,7 +3488,7 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div id="c-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="c-signup-btn" onclick="candidateSignup()">Create Account</button>
+            <button class="auth-btn" id="c-signup-btn" onclick="candidateSignup()" disabled>Create Account</button>
             <div class="auth-link">Already have an account? <a onclick="showCandidateView('login')">Sign in</a></div>
           </div>
         </div>
@@ -3267,9 +3503,52 @@ select option{background:var(--s2);}
             <div class="auth-sub">We'll send a reset link to your email</div>
           </div>
           <div class="auth-form">
-            <div class="field"><label>Email</label><input id="c-fp-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+            <div id="c-fp-step1">
+              <div class="field"><label>Email</label>
+                <div class="otp-email-row">
+                  <input id="c-fp-email" type="email" placeholder="you@email.com" autocomplete="email">
+                  <button class="otp-send-btn" id="c-fp-send-btn" type="button" onclick="cFpSendOtp()">Send OTP</button>
+                </div>
+              </div>
+            </div>
+            <div id="c-fp-step2" style="display:none">
+              <div class="otp-sent-notice">
+                <span class="otp-sent-icon">📧</span>
+                <span>OTP sent to <strong id="c-fp-otp-email-display"></strong></span>
+              </div>
+              <div class="field">
+                <label>Enter 6-digit OTP</label>
+                <div class="otp-input-row">
+                  <input id="c-fp-otp" type="text" inputmode="numeric" maxlength="6"
+                         placeholder="000000" autocomplete="one-time-code"
+                         oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+                  <button class="otp-verify-btn" type="button" id="c-fp-verify-btn" onclick="cFpVerifyOtp()">Verify</button>
+                </div>
+              </div>
+              <div class="otp-resend-row">
+                <span id="c-fp-resend-timer" class="otp-timer"></span>
+                <button class="otp-resend-btn" id="c-fp-resend-btn" type="button" style="display:none" onclick="cFpSendOtp(true)">Resend OTP</button>
+              </div>
+              <div id="c-fp-pw-fields" style="display:none">
+                <div class="otp-verified-badge" style="display:block;margin-bottom:12px">✅ Email verified! Set your new password.</div>
+                <div class="field">
+                  <label>New Password</label>
+                  <div class="pw-wrap">
+                    <input id="c-fp-newpass" type="password" placeholder="New strong password" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('c-fp-newpass',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Confirm Password</label>
+                  <div class="pw-wrap">
+                    <input id="c-fp-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('c-fp-confirm',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  </div>
+                </div>
+                <button class="auth-btn" id="c-fp-reset-btn" type="button" onclick="cFpResetPassword()">Reset Password</button>
+              </div>
+            </div>
             <div id="c-forgot-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" onclick="candidateForgot()">Send Reset Link</button>
             <div class="auth-link"><a onclick="showCandidateView('login')">← Back to login</a></div>
           </div>
         </div>
@@ -3424,13 +3703,13 @@ select option{background:var(--s2);}
               <div class="faq-q">What payment methods are accepted?
                 <svg class="faq-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              <div class="faq-a">All major credit/debit cards, UPI, net banking, and wallets via Razorpay — India's most trusted payment gateway.</div>
+              <div class="faq-a">All major credit/debit cards, UPI, net banking, and wallets via trusted and secure payment partners — India's most trusted payment gateway.</div>
             </div>
             <div class="faq-item" onclick="toggleFaq(this)">
               <div class="faq-q">Is there a refund policy?
                 <svg class="faq-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              <div class="faq-a">Yes. We offer a 7-day refund guarantee on your first paid subscription. Not satisfied? Contact futurehiretech@gmail.com within 7 days of purchase for a full refund, no questions asked.</div>
+              <div class="faq-a">Yes. We offer a 7-day refund guarantee on your first paid subscription. Not satisfied? Contact Support@futurehiretech.com within 7 days of purchase for a full refund, no questions asked.</div>
             </div>
           </div>
         </div>
@@ -3440,7 +3719,7 @@ select option{background:var(--s2);}
           <div class="refund-icon">🛡️</div>
           <div>
             <strong class="refund-text">7-Day Refund Guarantee</strong>
-            <p style="font-size:12px;color:var(--text3);margin-top:3px;">Not satisfied? Request a full refund within 7 days of your first paid subscription. No questions asked. Contact futurehiretech@gmail.com</p>
+            <p style="font-size:12px;color:var(--text3);margin-top:3px;">Not satisfied? Request a full refund within 7 days of your first paid subscription. No questions asked. Contact Support@futurehiretech.com</p>
           </div>
         </div>
 
@@ -3670,7 +3949,32 @@ select option{background:var(--s2);}
               <div class="field"><label>First Name</label><input id="r-su-fname" type="text" placeholder="John" autocomplete="given-name"></div>
               <div class="field"><label>Last Name</label><input id="r-su-lname" type="text" placeholder="Doe" autocomplete="family-name"></div>
             </div>
-            <div class="field"><label>Email</label><input id="r-su-email" type="email" placeholder="recruiter@company.com" autocomplete="email"></div>
+            <div class="field"><label>Email</label>
+              <div class="otp-email-row">
+                <input id="r-su-email" type="email" placeholder="recruiter@company.com" autocomplete="email">
+                <button class="otp-send-btn" id="r-su-send-otp-btn" type="button" onclick="rSuSendOtp()">Send OTP</button>
+              </div>
+            </div>
+            <div id="r-su-step2" style="display:none">
+              <div class="otp-sent-notice">
+                <span class="otp-sent-icon">📧</span>
+                <span>OTP sent to <strong id="r-su-otp-email-display"></strong></span>
+              </div>
+              <div class="field">
+                <label>Enter 6-digit OTP</label>
+                <div class="otp-input-row">
+                  <input id="r-su-otp" type="text" inputmode="numeric" maxlength="6"
+                         placeholder="000000" autocomplete="one-time-code"
+                         oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+                  <button class="otp-verify-btn" type="button" id="r-su-verify-btn" onclick="rSuVerifyOtp()">Verify</button>
+                </div>
+              </div>
+              <div class="otp-resend-row">
+                <span id="r-su-resend-timer" class="otp-timer"></span>
+                <button class="otp-resend-btn" id="r-su-resend-btn" type="button" style="display:none" onclick="rSuSendOtp(true)">Resend OTP</button>
+              </div>
+              <div id="r-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✅ Email verified!</div>
+            </div>
             <div class="field"><label>Contact Number</label><input id="r-su-phone" type="tel" placeholder="+1 234 567 8900" autocomplete="tel"></div>
             <div class="field">
               <label>Password</label>
@@ -3680,7 +3984,7 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div id="r-signup-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" id="r-signup-btn" onclick="recruiterSignup()">Create Account</button>
+            <button class="auth-btn" id="r-signup-btn" onclick="recruiterSignup()" disabled>Create Account</button>
             <div class="auth-link">Already have an account? <a onclick="showRecruiterView('login')">Sign in</a></div>
           </div>
         </div>
@@ -3695,9 +3999,52 @@ select option{background:var(--s2);}
             <div class="auth-sub">We'll send a reset link to your email</div>
           </div>
           <div class="auth-form">
-            <div class="field"><label>Email</label><input id="r-fp-email" type="email" placeholder="recruiter@company.com" autocomplete="email"></div>
+            <div id="r-fp-step1">
+              <div class="field"><label>Email</label>
+                <div class="otp-email-row">
+                  <input id="r-fp-email" type="email" placeholder="recruiter@company.com" autocomplete="email">
+                  <button class="otp-send-btn" id="r-fp-send-btn" type="button" onclick="rFpSendOtp()">Send OTP</button>
+                </div>
+              </div>
+            </div>
+            <div id="r-fp-step2" style="display:none">
+              <div class="otp-sent-notice">
+                <span class="otp-sent-icon">📧</span>
+                <span>OTP sent to <strong id="r-fp-otp-email-display"></strong></span>
+              </div>
+              <div class="field">
+                <label>Enter 6-digit OTP</label>
+                <div class="otp-input-row">
+                  <input id="r-fp-otp" type="text" inputmode="numeric" maxlength="6"
+                         placeholder="000000" autocomplete="one-time-code"
+                         oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+                  <button class="otp-verify-btn" type="button" id="r-fp-verify-btn" onclick="rFpVerifyOtp()">Verify</button>
+                </div>
+              </div>
+              <div class="otp-resend-row">
+                <span id="r-fp-resend-timer" class="otp-timer"></span>
+                <button class="otp-resend-btn" id="r-fp-resend-btn" type="button" style="display:none" onclick="rFpSendOtp(true)">Resend OTP</button>
+              </div>
+              <div id="r-fp-pw-fields" style="display:none">
+                <div class="otp-verified-badge" style="display:block;margin-bottom:12px">✅ Email verified! Set your new password.</div>
+                <div class="field">
+                  <label>New Password</label>
+                  <div class="pw-wrap">
+                    <input id="r-fp-newpass" type="password" placeholder="New strong password" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('r-fp-newpass',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Confirm Password</label>
+                  <div class="pw-wrap">
+                    <input id="r-fp-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="togglePw('r-fp-confirm',this)" title="Show/hide"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  </div>
+                </div>
+                <button class="auth-btn" id="r-fp-reset-btn" type="button" onclick="rFpResetPassword()">Reset Password</button>
+              </div>
+            </div>
             <div id="r-forgot-msg" class="auth-msg" role="alert"></div>
-            <button class="auth-btn" onclick="recruiterForgot()">Send Reset Link</button>
             <div class="auth-link"><a onclick="showRecruiterView('login')">← Back to login</a></div>
           </div>
         </div>
@@ -3855,7 +4202,7 @@ select option{background:var(--s2);}
           <div class="refund-icon">🛡️</div>
           <div>
             <strong class="refund-text">7-Day Refund Guarantee</strong>
-            <p style="font-size:12px;color:var(--text3);margin-top:3px;">Not satisfied within the first 7 days? Contact futurehiretech@gmail.com for a full refund. No questions asked.</p>
+            <p style="font-size:12px;color:var(--text3);margin-top:3px;">Not satisfied within the first 7 days? Contact Support@futurehiretech.com for a full refund. No questions asked.</p>
           </div>
         </div>
 
@@ -5116,6 +5463,297 @@ function _applyCandidateDashboard(user) {
   document.getElementById('c-live-avatar').textContent = name[0].toUpperCase();
 }
 
+// OTP STATE & HELPERS
+// ══════════════════════════════════════════════════════════════════
+const _otpState = {
+  c_su:  { verified: false, email: '', timerHandle: null },
+  c_fp:  { verified: false, email: '', timerHandle: null, otp: '' },
+  r_su:  { verified: false, email: '', timerHandle: null },
+  r_fp:  { verified: false, email: '', timerHandle: null, otp: '' },
+};
+
+function _startOtpTimer(ctx, timerElId, resendBtnId, durationSec = 120) {
+  const state = _otpState[ctx];
+  if (state.timerHandle) clearInterval(state.timerHandle);
+  let remaining = durationSec;
+  const timerEl   = document.getElementById(timerElId);
+  const resendBtn = document.getElementById(resendBtnId);
+  if (resendBtn) resendBtn.style.display = 'none';
+  const tick = () => {
+    if (timerEl) timerEl.textContent = `Resend in ${remaining}s`;
+    remaining--;
+    if (remaining < 0) {
+      clearInterval(state.timerHandle);
+      if (timerEl)   timerEl.textContent = '';
+      if (resendBtn) resendBtn.style.display = '';
+    }
+  };
+  tick();
+  state.timerHandle = setInterval(tick, 1000);
+}
+
+/* ─── CANDIDATE SIGNUP OTP ─────────────────────────────────── */
+
+async function cSuSendOtp(isResend = false) {
+  const email   = document.getElementById('c-su-email').value.trim();
+  const msg     = document.getElementById('c-signup-msg');
+  const sendBtn = document.getElementById('c-su-send-otp-btn');
+  if (!email) { showMsg(msg, 'Please enter your email first.', 'err'); return; }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+
+  try {
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
+      sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
+      return;
+    }
+    _otpState.c_su.email    = email;
+    _otpState.c_su.verified = false;
+    document.getElementById('c-su-otp-email-display').textContent = email;
+    document.getElementById('c-su-step2').style.display = '';
+    document.getElementById('c-su-otp-verified-badge').style.display = 'none';
+    document.getElementById('c-signup-btn').disabled = true;
+    _startOtpTimer('c_su', 'c-su-resend-timer', 'c-su-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent! Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error. Please try again.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function cSuVerifyOtp() {
+  const otp     = document.getElementById('c-su-otp').value.trim();
+  const email   = _otpState.c_su.email;
+  const msg     = document.getElementById('c-signup-msg');
+  const verBtn  = document.getElementById('c-su-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Verification failed'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.c_su.verified = true;
+    document.getElementById('c-su-otp-verified-badge').style.display = '';
+    document.getElementById('c-signup-btn').disabled = false;
+    verBtn.disabled = true; verBtn.textContent = '✓';
+    showMsg(msg, '✅ Email verified! You can now create your account.', 'ok');
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+/* ─── CANDIDATE FORGOT PASSWORD OTP ───────────────────────── */
+
+async function cFpSendOtp(isResend = false) {
+  const email   = document.getElementById('c-fp-email').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+  const sendBtn = document.getElementById('c-fp-send-btn');
+  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    await apiPost('/api/auth/forgot-password/send-otp', { email, role: 'candidate' });
+    _otpState.c_fp.email    = email;
+    _otpState.c_fp.verified = false;
+    document.getElementById('c-fp-otp-email-display').textContent = email;
+    document.getElementById('c-fp-step2').style.display = '';
+    document.getElementById('c-fp-pw-fields').style.display = 'none';
+    _startOtpTimer('c_fp', 'c-fp-resend-timer', 'c-fp-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent (if email is registered). Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function cFpVerifyOtp() {
+  const otp     = document.getElementById('c-fp-otp').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+  const verBtn  = document.getElementById('c-fp-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+  _otpState.c_fp.otp      = otp;
+  _otpState.c_fp.verified = true;
+  document.getElementById('c-fp-pw-fields').style.display = '';
+  verBtn.disabled = true; verBtn.textContent = '✓';
+  showMsg(msg, '', '');
+}
+
+async function cFpResetPassword() {
+  const email   = _otpState.c_fp.email;
+  const otp     = _otpState.c_fp.otp;
+  const newPass = document.getElementById('c-fp-newpass').value.trim();
+  const confirm = document.getElementById('c-fp-confirm').value.trim();
+  const msg     = document.getElementById('c-forgot-msg');
+
+  if (!newPass || !confirm)   { showMsg(msg, 'Please fill both password fields.', 'err'); return; }
+  if (newPass !== confirm)    { showMsg(msg, 'Passwords do not match.', 'err'); return; }
+
+  setBtnLoading('c-fp-reset-btn', true, 'Resetting…');
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify',
+                               { email, otp, new_password: newPass, role: 'candidate' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err');
+      return;
+    }
+    showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
+    setTimeout(() => showCandidateView('login'), 2000);
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    setBtnLoading('c-fp-reset-btn', false, 'Reset Password');
+  }
+}
+
+/* ─── RECRUITER SIGNUP OTP ─────────────────────────────────── */
+
+async function rSuSendOtp(isResend = false) {
+  const email   = document.getElementById('r-su-email').value.trim();
+  const msg     = document.getElementById('r-signup-msg');
+  const sendBtn = document.getElementById('r-su-send-otp-btn');
+  if (!email) { showMsg(msg, 'Please enter your email first.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    const res  = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
+      sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
+      return;
+    }
+    _otpState.r_su.email    = email;
+    _otpState.r_su.verified = false;
+    document.getElementById('r-su-otp-email-display').textContent = email;
+    document.getElementById('r-su-step2').style.display = '';
+    document.getElementById('r-su-otp-verified-badge').style.display = 'none';
+    document.getElementById('r-signup-btn').disabled = true;
+    _startOtpTimer('r_su', 'r-su-resend-timer', 'r-su-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent! Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function rSuVerifyOtp() {
+  const otp     = document.getElementById('r-su-otp').value.trim();
+  const email   = _otpState.r_su.email;
+  const msg     = document.getElementById('r-signup-msg');
+  const verBtn  = document.getElementById('r-su-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Verification failed'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.r_su.verified = true;
+    document.getElementById('r-su-otp-verified-badge').style.display = '';
+    document.getElementById('r-signup-btn').disabled = false;
+    verBtn.disabled = true; verBtn.textContent = '✓';
+    showMsg(msg, '✅ Email verified! You can now create your account.', 'ok');
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
+}
+
+/* ─── RECRUITER FORGOT PASSWORD OTP ───────────────────────── */
+
+async function rFpSendOtp(isResend = false) {
+  const email   = document.getElementById('r-fp-email').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+  const sendBtn = document.getElementById('r-fp-send-btn');
+  if (!email) { showMsg(msg, 'Please enter your email.', 'err'); return; }
+
+  sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+  showMsg(msg, 'Sending OTP…', 'info');
+  try {
+    await apiPost('/api/auth/forgot-password/send-otp', { email, role: 'recruiter' });
+    _otpState.r_fp.email    = email;
+    _otpState.r_fp.verified = false;
+    document.getElementById('r-fp-otp-email-display').textContent = email;
+    document.getElementById('r-fp-step2').style.display = '';
+    document.getElementById('r-fp-pw-fields').style.display = 'none';
+    _startOtpTimer('r_fp', 'r-fp-resend-timer', 'r-fp-resend-btn');
+    showMsg(msg, isResend ? '✅ OTP resent!' : '✅ OTP sent (if email is registered). Check your inbox.', 'ok');
+    sendBtn.textContent = 'Resend';
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    sendBtn.disabled = false;
+    if (!isResend) sendBtn.textContent = 'Resend';
+  }
+}
+
+async function rFpVerifyOtp() {
+  const otp     = document.getElementById('r-fp-otp').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+  const verBtn  = document.getElementById('r-fp-verify-btn');
+  if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
+  _otpState.r_fp.otp      = otp;
+  _otpState.r_fp.verified = true;
+  document.getElementById('r-fp-pw-fields').style.display = '';
+  verBtn.disabled = true; verBtn.textContent = '✓';
+  showMsg(msg, '', '');
+}
+
+async function rFpResetPassword() {
+  const email   = _otpState.r_fp.email;
+  const otp     = _otpState.r_fp.otp;
+  const newPass = document.getElementById('r-fp-newpass').value.trim();
+  const confirm = document.getElementById('r-fp-confirm').value.trim();
+  const msg     = document.getElementById('r-forgot-msg');
+
+  if (!newPass || !confirm)   { showMsg(msg, 'Please fill both password fields.', 'err'); return; }
+  if (newPass !== confirm)    { showMsg(msg, 'Passwords do not match.', 'err'); return; }
+
+  setBtnLoading('r-fp-reset-btn', true, 'Resetting…');
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify',
+                               { email, otp, new_password: newPass, role: 'recruiter' });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err');
+      return;
+    }
+    showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
+    setTimeout(() => showRecruiterView('login'), 2000);
+  } catch (e) {
+    showMsg(msg, '❌ Network error.', 'err');
+  } finally {
+    setBtnLoading('r-fp-reset-btn', false, 'Reset Password');
+  }
+}
+
 async function candidateSignup() {
   const fname = document.getElementById('c-su-fname').value.trim();
   const lname = document.getElementById('c-su-lname').value.trim();
@@ -5125,6 +5763,7 @@ async function candidateSignup() {
   const msg   = document.getElementById('c-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
   if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (!_otpState.c_su.verified) { showMsg(msg, 'Please verify your email with OTP first.', 'err'); return; }
   setBtnLoading('c-signup-btn', true, 'Creating account…');
   showMsg(msg, 'Creating account…', 'info');
   try {
@@ -5274,6 +5913,7 @@ async function recruiterSignup() {
   const msg   = document.getElementById('r-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
   if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'err'); return; }
+  if (!_otpState.r_su.verified) { showMsg(msg, 'Please verify your email with OTP first.', 'err'); return; }
   setBtnLoading('r-signup-btn', true, 'Creating account…');
   showMsg(msg, 'Creating account…', 'info');
   try {
@@ -7291,7 +7931,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="lp-legal-page">
     <div class="lp-legal-header">
       <h1>Privacy Policy</h1>
-      <p>Last updated: January 1, 2025 &nbsp;·&nbsp; Effective immediately upon account registration</p>
+      <p>Last updated: May 1, 2026 &nbsp;·&nbsp; Effective immediately upon account registration</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7328,9 +7968,9 @@ window.addEventListener('DOMContentLoaded', () => {
       <h3>2.4 Payment Information</h3>
       <ul>
         <li>Subscription plan selected and billing period</li>
-        <li>Payment transaction IDs (provided by Razorpay)</li>
+        <li>Payment transaction IDs (provided by trusted and secure payment partners)</li>
         <li>Billing history and invoice records</li>
-        <li>We do NOT store credit card numbers, CVVs, or banking credentials — all payment processing is handled by Razorpay's PCI-DSS compliant infrastructure</li>
+        <li>We do NOT store credit card numbers, CVVs, or banking credentials — all payment processing is handled by trusted and secure payment partners's PCI-DSS compliant infrastructure</li>
       </ul>
       <h3>2.5 Technical and Usage Data</h3>
       <ul>
@@ -7370,7 +8010,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <h2>4. Data Sharing and Disclosure</h2>
       <p>We do not sell, rent, or trade your personal information to third parties for marketing purposes. We may share information only in the following circumstances:</p>
       <ul>
-        <li><strong>Service Providers:</strong> Trusted partners who assist with platform operations (Supabase for database hosting, Razorpay for payment processing, SMTP providers for email delivery)</li>
+        <li><strong>Service Providers:</strong> Trusted partners who assist with platform operations (Supabase for database hosting, trusted and secure payment partners for payment processing, SMTP providers for email delivery)</li>
         <li><strong>Legal Compliance:</strong> When required by applicable law, court order, or governmental authority</li>
         <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of all or a portion of our assets</li>
         <li><strong>Consent:</strong> With your explicit consent in any other circumstances</li>
@@ -7401,7 +8041,7 @@ window.addEventListener('DOMContentLoaded', () => {
         <li>Regular security audits and vulnerability assessments</li>
         <li>Session tokens are invalidated upon logout</li>
       </ul>
-      <p>You are responsible for maintaining the confidentiality of your account credentials. Notify us immediately at futurehiretech@gmail.com if you suspect unauthorized access to your account.</p>
+      <p>You are responsible for maintaining the confidentiality of your account credentials. Notify us immediately at Support@futurehiretech.com if you suspect unauthorized access to your account.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7415,7 +8055,7 @@ window.addEventListener('DOMContentLoaded', () => {
         <li><strong>Objection:</strong> Object to certain types of data processing</li>
         <li><strong>Withdrawal:</strong> Withdraw consent where processing is based on consent</li>
       </ul>
-      <p>To exercise these rights, contact us at futurehiretech@gmail.com. We will respond within 30 days.</p>
+      <p>To exercise these rights, contact us at Support@futurehiretech.com. We will respond within 30 days.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7438,7 +8078,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="lp-legal-contact">
         <p>For privacy-related inquiries, data requests, or to report a concern, please contact:</p>
         <p><strong>FutureHire Technologies — HireFlow Privacy Team</strong><br>
-        Email: <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a><br>
+        Email: <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a><br>
         Response time: Within 5 business days</p>
       </div>
     </div>
@@ -7448,12 +8088,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <footer class="lp-footer">
   <div class="lp-footer-bottom" style="max-width:1200px;margin:0 auto;">
-    <span>© 2025 HireFlow. All rights reserved.</span>
+    <span>© 2026 HireFlow by FutureHireTech. All rights reserved.</span>
     <div class="lp-footer-legal">
       <a href="#" onclick="openModal('modal-privacy');return false;">Privacy</a>
       <a href="#" onclick="openModal('modal-terms');return false;">Terms</a>
       <a href="#" onclick="openModal('modal-refund');return false;">Refund</a>
-      <a href="/contact">Contact</a>
+      <a href="#contact">Contact</a>
     </div>
   </div>
 </footer>
@@ -7492,7 +8132,7 @@ window.addEventListener('scroll', () => {
 
     <div class="lp-legal-header">
       <h1>Terms &amp; Conditions</h1>
-      <p>Last updated: January 1, 2025 &nbsp;·&nbsp; Please read these terms carefully before using HireFlow.</p>
+      <p>Last updated: May 1, 2026 &nbsp;·&nbsp; Please read these terms carefully before using HireFlow.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7522,7 +8162,7 @@ window.addEventListener('scroll', () => {
         <li>You agree to provide accurate, current, and complete information during registration and to keep your account information updated.</li>
         <li>You are solely responsible for maintaining the confidentiality of your login credentials (email and password). You must not share your credentials with any third party.</li>
         <li>You are responsible for all activity that occurs under your account, whether authorized by you or not.</li>
-        <li>You must notify us immediately at <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a> if you suspect any unauthorized access to your account.</li>
+        <li>You must notify us immediately at <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a> if you suspect any unauthorized access to your account.</li>
         <li>We reserve the right to suspend or terminate accounts that violate these Terms, without prior notice.</li>
       </ul>
     </div>
@@ -7539,9 +8179,9 @@ window.addEventListener('scroll', () => {
       <h3>4.2 Billing</h3>
       <ul>
         <li>Subscriptions are billed in advance on a monthly or annual basis depending on the plan selected.</li>
-        <li>All payments are processed securely through Razorpay, a PCI-DSS compliant payment gateway. We do not store your credit or debit card details.</li>
+        <li>All payments are processed securely through trusted and secure payment partners, a PCI-DSS compliant payment gateway. We do not store your credit or debit card details.</li>
         <li>Subscription fees are non-refundable except as outlined in our Refund Policy (Section 9) and Refund Policy page.</li>
-        <li>We accept all major credit/debit cards, UPI, net banking, and digital wallets through Razorpay.</li>
+        <li>We accept all major credit/debit cards, UPI, net banking, and digital wallets through trusted and secure payment partners.</li>
       </ul>
       <h3>4.3 Auto-Renewal</h3>
       <ul>
@@ -7602,7 +8242,7 @@ window.addEventListener('scroll', () => {
         <li>Upon cancellation, your access continues until the end of the current paid billing period. No further charges will be made.</li>
         <li>Cancellation does not automatically entitle you to a refund for the current billing period. Please refer to our Refund Policy for eligibility.</li>
         <li>After cancellation, your account and data may be retained for up to 90 days before deletion, as outlined in our Privacy Policy.</li>
-        <li>To cancel, navigate to your account settings or contact <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a>.</li>
+        <li>To cancel, navigate to your account settings or contact <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a>.</li>
       </ul>
     </div>
 
@@ -7610,11 +8250,11 @@ window.addEventListener('scroll', () => {
       <h2>9. Refund Policy</h2>
       <ul>
         <li>HireFlow offers a <strong>7-day refund guarantee</strong> for new paid subscriptions (Recruiter Plan and Premium Plan). If you are unsatisfied within 7 days of your first payment, contact us for a full refund.</li>
-        <li>Refund requests must be submitted to <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a> within 7 days of the charge. Requests submitted after 7 days will not be eligible for a refund.</li>
+        <li>Refund requests must be submitted to <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a> within 7 days of the charge. Requests submitted after 7 days will not be eligible for a refund.</li>
         <li>Subscription renewal charges are non-refundable. The 7-day guarantee applies only to the initial subscription payment.</li>
         <li>Free trial users are not eligible for refunds as no payment is collected during the trial.</li>
         <li>Accounts terminated due to violation of these Terms are not eligible for any refund.</li>
-        <li>Approved refunds will be processed within 7–10 business days via the original payment method through Razorpay.</li>
+        <li>Approved refunds will be processed within 7–10 business days via the original payment method through trusted and secure payment partners.</li>
       </ul>
       <p>For full refund details, see our <a href="#" onclick="openModal('modal-refund');return false;">Refund Policy page</a>.</p>
     </div>
@@ -7661,7 +8301,7 @@ window.addEventListener('scroll', () => {
     <div class="lp-legal-section">
       <h2>15. Governing Law and Disputes</h2>
       <p>These Terms shall be governed by and construed in accordance with the laws of India. Any disputes arising under or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts of India.</p>
-      <p>We encourage you to contact us first at <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a> to resolve any concerns informally before pursuing formal legal action.</p>
+      <p>We encourage you to contact us first at <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a> to resolve any concerns informally before pursuing formal legal action.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7679,7 +8319,7 @@ window.addEventListener('scroll', () => {
       <div class="lp-legal-contact">
         <p>For questions about these Terms and Conditions, please contact:</p>
         <p><strong>FutureHire Technologies — HireFlow Legal Team</strong><br>
-        Email: <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a><br>
+        Email: <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a><br>
         Response time: Within 5 business days</p>
       </div>
     </div>
@@ -7689,12 +8329,12 @@ window.addEventListener('scroll', () => {
 
 <footer class="lp-footer">
   <div class="lp-footer-bottom" style="max-width:1200px;margin:0 auto;">
-    <span>© 2025 HireFlow. All rights reserved.</span>
+    <span>© 2026 HireFlow by FutureHireTechnologies. All rights reserved.</span>
     <div class="lp-footer-legal">
       <a href="#" onclick="openModal('modal-privacy');return false;">Privacy</a>
       <a href="#" onclick="openModal('modal-terms');return false;">Terms</a>
       <a href="#" onclick="openModal('modal-refund');return false;">Refund</a>
-      <a href="/contact">Contact</a>
+      <a href="#contact">Contact</a>
     </div>
   </div>
 </footer>
@@ -7733,7 +8373,7 @@ window.addEventListener('scroll', () => {
 
     <div class="lp-legal-header">
       <h1>Refund Policy</h1>
-      <p>Last updated: January 1, 2025 &nbsp;·&nbsp; 7-day refund guarantee on new paid subscriptions.</p>
+      <p>Last updated: May 1, 2026 &nbsp;·&nbsp; 7-day refund guarantee on new paid subscriptions.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7764,18 +8404,18 @@ window.addEventListener('scroll', () => {
       <h2>3. How to Request a Refund</h2>
       <p>To request a refund within the 7-day eligibility window, please follow these steps:</p>
       <ul>
-        <li><strong>Step 1:</strong> Send an email to <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a> with the subject line: <em>"Refund Request — [Your Registered Email]"</em></li>
+        <li><strong>Step 1:</strong> Send an email to <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a> with the subject line: <em>"Refund Request — [Your Registered Email]"</em></li>
         <li><strong>Step 2:</strong> Include the following information in your email:
           <ul style="margin-top:8px;margin-left:16px;">
             <li>Your full name and registered email address</li>
             <li>The subscription plan you purchased</li>
             <li>The date of payment</li>
-            <li>Your Razorpay transaction ID or payment receipt (if available)</li>
+            <li>Your transaction ID or payment receipt (if available)</li>
             <li>A brief reason for the refund request (optional but helpful)</li>
           </ul>
         </li>
         <li><strong>Step 3:</strong> Our support team will review your request and respond within <strong>2–3 business days</strong>.</li>
-        <li><strong>Step 4:</strong> If approved, the refund will be processed within <strong>7–10 business days</strong> to the original payment method via Razorpay.</li>
+        <li><strong>Step 4:</strong> If approved, the refund will be processed within <strong>7–10 business days</strong> to the original payment method.</li>
       </ul>
     </div>
 
@@ -7783,7 +8423,7 @@ window.addEventListener('scroll', () => {
       <h2>4. Refund Processing</h2>
       <ul>
         <li>Approved refunds are credited back to the original payment method (credit card, debit card, UPI, net banking, or digital wallet) used at the time of purchase.</li>
-        <li>Refunds are processed through Razorpay. Once initiated by us, the credit typically appears within <strong>7–10 business days</strong>, depending on your bank or payment provider.</li>
+        <li>Refunds are processed through Original payment gateway Once initiated by us, the credit typically appears within <strong>7–10 business days</strong>, depending on your bank or payment provider.</li>
         <li>We are not responsible for delays caused by your bank or payment provider after the refund has been initiated on our end.</li>
         <li>Refunds will be issued in Indian Rupees (INR) for the exact amount charged. We are not responsible for currency conversion losses if you paid in a different currency.</li>
       </ul>
@@ -7801,7 +8441,7 @@ window.addEventListener('scroll', () => {
 
     <div class="lp-legal-section">
       <h2>6. Exceptional Circumstances</h2>
-      <p>We understand that exceptional situations may arise. If you have a refund request that falls outside the standard eligibility criteria (e.g., serious health issues, bereavement, or significant platform outages), please contact us at <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a>. We will review such requests on a case-by-case basis at our sole discretion.</p>
+      <p>We understand that exceptional situations may arise. If you have a refund request that falls outside the standard eligibility criteria (e.g., serious health issues, bereavement, or significant platform outages), please contact us at <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a>. We will review such requests on a case-by-case basis at our sole discretion.</p>
     </div>
 
     <div class="lp-legal-section">
@@ -7814,7 +8454,7 @@ window.addEventListener('scroll', () => {
       <div class="lp-legal-contact">
         <p>For refund requests or questions about this policy, please contact:</p>
         <p><strong>FutureHire Technologies — HireFlow Support Team</strong><br>
-        Email: <a href="mailto:futurehiretech@gmail.com">futurehiretech@gmail.com</a><br>
+        Email: <a href="mailto:Support@futurehiretech.com">Support@futurehiretech.com</a><br>
         Subject line: <em>Refund Request — [Your Registered Email]</em><br>
         Response time: Within 2–3 business days</p>
       </div>
@@ -7825,12 +8465,12 @@ window.addEventListener('scroll', () => {
 
 <footer class="lp-footer">
   <div class="lp-footer-bottom" style="max-width:1200px;margin:0 auto;">
-    <span>© 2025 HireFlow. All rights reserved.</span>
+    <span>© 2026 HireFlow by FutureHireTechnologies. All rights reserved.</span>
     <div class="lp-footer-legal">
       <a href="#" onclick="openModal('modal-privacy');return false;">Privacy</a>
       <a href="#" onclick="openModal('modal-terms');return false;">Terms</a>
       <a href="#" onclick="openModal('modal-refund');return false;">Refund</a>
-      <a href="/contact">Contact</a>
+      <a href="#contact">Contact</a>
     </div>
   </div>
 </footer>
