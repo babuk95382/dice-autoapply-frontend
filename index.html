@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
-<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <!-- CSS -->
 <style>/* main.css */
 /* ══════════════════════════════════════════════════════════
@@ -1317,12 +1317,12 @@ select option{background:var(--s2);}
 .asc-days-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}
 .asc-days-label{font-size:11px;color:var(--text3);}
 
-/* ── Razorpay loading overlay ── */
-.rzp-loading-overlay{position:fixed;inset:0;z-index:9000;background:rgba(7,7,13,0.92);backdrop-filter:var(--blur-xl);display:flex;align-items:center;justify-content:center;}
-.rzp-loading-card{background:var(--glass-1);border:1px solid var(--glass-border-strong);border-radius:var(--r-xl);padding:40px 48px;text-align:center;box-shadow:var(--shadow-glass),0 40px 80px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center;gap:16px;}
-.rzp-loading-spinner{width:40px;height:40px;border:3px solid rgba(37,211,102,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-.rzp-loading-text{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
-.rzp-loading-sub{font-size:11px;color:var(--text3);}
+/* ── Cashfree loading overlay ── */
+.cf-loading-overlay{position:fixed;inset:0;z-index:9000;background:rgba(7,7,13,0.92);backdrop-filter:var(--blur-xl);display:flex;align-items:center;justify-content:center;}
+.cf-loading-card{background:var(--glass-1);border:1px solid var(--glass-border-strong);border-radius:var(--r-xl);padding:40px 48px;text-align:center;box-shadow:var(--shadow-glass),0 40px 80px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center;gap:16px;}
+.cf-loading-spinner{width:40px;height:40px;border:3px solid rgba(37,211,102,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+.cf-loading-text{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+.cf-loading-sub{font-size:11px;color:var(--text3);}
 
 </style>
 <style>/* automation.css */
@@ -4620,8 +4620,7 @@ select option{background:var(--s2);}
           </div>
         </div>
 
-        <!-- International pricing badge (hidden until pricing loads) -->
-        <div id="c-pricing-country-badge" style="display:none;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--green);margin-bottom:14px;align-items:center;gap:6px;"></div>
+
 
         <!-- Plan cards — 2 col -->
         <div class="sub-plans-v2">
@@ -5122,8 +5121,7 @@ select option{background:var(--s2);}
           </div>
         </div>
 
-        <!-- International pricing badge -->
-        <div id="r-pricing-country-badge" style="display:none;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--green);margin-bottom:14px;align-items:center;gap:6px;"></div>
+
 
         <!-- Plan cards — 3 col -->
         <div class="sub-plans-v2" style="grid-template-columns:repeat(3,1fr);">
@@ -5159,7 +5157,7 @@ select option{background:var(--s2);}
             <div class="plan-name-v2">Recruiter Monthly</div>
             <div class="plan-price-row">
               <span class="plan-price-currency" id="r-monthly-price-symbol">₹</span>
-              <span class="plan-price-amount" id="r-monthly-price-amount">499</span>
+              <span class="plan-price-amount" id="r-monthly-price-amount">999</span>
               <span class="plan-price-period">/ month</span>
             </div>
             <div class="plan-desc-v2">Full access for agencies and staffing firms</div>
@@ -5623,20 +5621,20 @@ select option{background:var(--s2);}
             <div id="rzp-status-row" class="sb-status-row" style="margin-bottom:16px">
               <span id="rzp-status-icon" class="sb-status-icon">⏳</span>
               <div class="sb-status-info">
-                <div class="sb-status-title" id="rzp-status-text">Checking Razorpay configuration…</div>
-                <div class="sb-status-sub" id="rzp-status-sub">Enter your Razorpay API keys below to enable payments.</div>
+                <div class="sb-status-title" id="rzp-status-text">Checking Cashfree configuration…</div>
+                <div class="sb-status-sub" id="rzp-status-sub">Enter your Cashfree App ID and Secret Key below to enable payments.</div>
               </div>
             </div>
             <div class="grid-2" style="margin-bottom:12px">
               <div class="field">
-                <label>Razorpay Key ID</label>
-                <input id="rzp-key-id" type="text" placeholder="rzp_live_xxxxxxxxxxxxxxx" autocomplete="off" style="font-family:monospace;font-size:12px">
+                <label>Cashfree App ID</label>
+                <input id="rzp-key-id" type="text" placeholder="CF_APP_ID_XXXXXXXXXXXXXXXXXXXX" autocomplete="off" style="font-family:monospace;font-size:12px">
                 <div id="rzp-key-id-err" style="font-size:11px;color:var(--red);margin-top:3px;display:none"></div>
               </div>
               <div class="field">
-                <label>Razorpay Key Secret</label>
+                <label>Cashfree Secret Key</label>
                 <div style="position:relative">
-                  <input id="rzp-key-secret" type="password" placeholder="rzp_live_xxxxxxxxxxxxxxx…" autocomplete="off" style="padding-right:40px;width:100%;box-sizing:border-box;font-family:monospace;font-size:12px">
+                  <input id="rzp-key-secret" type="password" placeholder="Cashfree Secret Key…" autocomplete="off" style="padding-right:40px;width:100%;box-sizing:border-box;font-family:monospace;font-size:12px">
                   <button onclick="toggleRzpSecretVisibility()" title="Show / hide secret" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0;line-height:1" id="rzp-secret-toggle">👁</button>
                 </div>
                 <div id="rzp-key-secret-err" style="font-size:11px;color:var(--red);margin-top:3px;display:none"></div>
@@ -5649,11 +5647,11 @@ select option{background:var(--s2);}
             </div>
             <div id="rzp-config-msg" style="font-size:12px;margin-bottom:10px;display:none;padding:8px 12px;border-radius:var(--r)"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn-add" id="rzp-save-btn" style="flex:1;min-width:160px;padding:9px;position:relative;overflow:hidden" onclick="saveRazorpaySettings()">
+              <button class="btn-add" id="rzp-save-btn" style="flex:1;min-width:160px;padding:9px;position:relative;overflow:hidden" onclick="saveCashfreeSettings()">
                 <span id="rzp-save-btn-text">💳 Save Payment Keys</span>
                 <span id="rzp-save-spinner" style="display:none">⏳ Saving…</span>
               </button>
-              <button class="btn-add" style="flex:1;min-width:140px;padding:9px" onclick="loadRazorpaySettings()">🔄 Refresh Status</button>
+              <button class="btn-add" style="flex:1;min-width:140px;padding:9px" onclick="loadCashfreeSettings()">🔄 Refresh Status</button>
             </div>
           </div>
         </div>
@@ -5899,12 +5897,12 @@ select option{background:var(--s2);}
 <!-- ── Toast Container ── -->
 <div class="toast-container" id="toast-container" aria-live="assertive"></div>
 
-<!-- ── Razorpay Loading Overlay ── -->
-<div id="rzp-loading" class="rzp-loading-overlay" style="display:none" role="status" aria-label="Opening payment gateway">
-  <div class="rzp-loading-card">
-    <div class="rzp-loading-spinner"></div>
-    <div class="rzp-loading-text">Opening Payment Gateway</div>
-    <div class="rzp-loading-sub">Powered by Razorpay · Secured by 256-bit SSL</div>
+<!-- ── Cashfree Loading Overlay ── -->
+<div id="rzp-loading" class="cf-loading-overlay" style="display:none" role="status" aria-label="Opening payment gateway">
+  <div class="cf-loading-card">
+    <div class="cf-loading-spinner"></div>
+    <div class="cf-loading-text">Opening Payment Gateway</div>
+    <div class="cf-loading-sub">Powered by Cashfree · Secured by 256-bit SSL</div>
   </div>
 </div>
 
@@ -6462,7 +6460,7 @@ function showCandidateView(view) {
     loadCandidateDetailsFromDB(authState.candidate.user?.id);
   }
   if (view === 'subscription') {
-    loadAndApplyIntlPricing('candidate');
+    // INR pricing is static — no dynamic fetch needed
   }
 }
 
@@ -6687,7 +6685,7 @@ function showRecruiterView(view) {
   }[view];
   if (target) { const el = document.getElementById(target); if (el) el.style.display = ''; }
   if (view === 'setup') { loadRecruiterCandidates(); setTimeout(() => loadRecruiterReport(), 500); }
-  if (view === 'subscription') { loadAndApplyIntlPricing('recruiter'); }
+  if (view === 'subscription') { /* INR pricing is static — no dynamic fetch needed */ }
 }
 
 async function recruiterLogin() {
@@ -6874,7 +6872,7 @@ async function activateRecruiterPlan(plan) {
     } catch(e) { toast('Network error', 'err'); }
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
   } else {
-    await openRazorpay('recruiter', plan, user);
+    await openCashfree('recruiter', plan, user);
     if (btn) { btn.disabled = false; }
   }
 }
@@ -6919,7 +6917,7 @@ async function adminLogin() {
     sidebarSetActive('overview', false);
     lockToRole('admin');
     loadAdminSettings();
-    loadRazorpaySettings();
+    loadCashfreeSettings();
     checkSupabaseStatus().then(() => { loadAdminDashboard(); startAdminDashboardPolling(); });
     startLiveDashboardPolling();
     const liveSection = document.getElementById('tab-content-live');
@@ -7057,106 +7055,8 @@ function renderSelfTags() {
 
 
 // ═══════════════════════════════════════════════════════
-//  INTERNATIONAL PRICING
 // ═══════════════════════════════════════════════════════
-// Cached pricing for the current session (populated on subscription page load)
-let _intlPricing = null;
-
-/**
- * Fetch pricing from the backend based on the user's stored phone number.
- * Falls back to INR if unavailable.
- */
-async function fetchIntlPricing(phone) {
-  try {
-    const param = phone ? ('?phone=' + encodeURIComponent(phone)) : '';
-    const res   = await fetch('/api/subscription/pricing' + param);
-    if (!res.ok) return null;
-    const data  = await res.json();
-    return data.ok ? data.pricing : null;
-  } catch(e) {
-    return null;
-  }
-}
-
-/**
- * Apply localised prices to the candidate subscription page.
- * Updates all price displays and button labels with the correct
- * currency symbol / amounts for the user's country.
- */
-function applyIntlPricingToUI(pricing, role) {
-  if (!pricing) return;
-  _intlPricing = pricing;
-
-  const isCandidate = !role || role === 'candidate';
-  const isRecruiter = role === 'recruiter';
-
-  // Country badge — show flag + country name at top of subscription page
-  const badgeId = isCandidate ? 'c-pricing-country-badge' : 'r-pricing-country-badge';
-  const badge   = document.getElementById(badgeId);
-  if (badge) {
-    badge.textContent = pricing.flag + ' Pricing for ' + pricing.country;
-    badge.style.display = 'inline-flex';
-  }
-
-  if (isCandidate) {
-    // Monthly candidate plan
-    const priceEl  = document.getElementById('c-monthly-price-amount');
-    const symbolEl = document.getElementById('c-monthly-price-symbol');
-    const btnEl    = document.getElementById('c-monthly-btn');
-    if (priceEl)  priceEl.textContent  = pricing.display_candidate_monthly.replace(/[^0-9.,]/g, '');
-    if (symbolEl) symbolEl.textContent = pricing.currency_symbol;
-    if (btnEl && !btnEl.disabled) {
-      btnEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5a5 5 0 100 10 5 5 0 000-10zM6.5 4v3l2 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Subscribe — ' + pricing.display_candidate_monthly + '/mo';
-    }
-    // Comparison table header
-    const thEl = document.getElementById('c-monthly-plan-header');
-    if (thEl) thEl.textContent = 'Monthly ' + pricing.display_candidate_monthly;
-  }
-
-  if (isRecruiter) {
-    // Recruiter monthly
-    const rMonthlyPrice  = document.getElementById('r-monthly-price-amount');
-    const rMonthlySymbol = document.getElementById('r-monthly-price-symbol');
-    const rMonthlyBtn    = document.getElementById('r-monthly-btn');
-    if (rMonthlyPrice)  rMonthlyPrice.textContent  = pricing.display_recruiter_monthly.replace(/[^0-9.,]/g, '');
-    if (rMonthlySymbol) rMonthlySymbol.textContent = pricing.currency_symbol;
-    if (rMonthlyBtn && !rMonthlyBtn.disabled) {
-      rMonthlyBtn.innerHTML = 'Subscribe — ' + pricing.display_recruiter_monthly + '/mo';
-    }
-    // Recruiter yearly
-    const rYearlyPrice  = document.getElementById('r-yearly-price-amount');
-    const rYearlySymbol = document.getElementById('r-yearly-price-symbol');
-    const rYearlyBtn    = document.getElementById('r-yearly-btn');
-    if (rYearlyPrice)  rYearlyPrice.textContent  = pricing.display_recruiter_yearly.replace(/[^0-9.,]/g, '');
-    if (rYearlySymbol) rYearlySymbol.textContent = pricing.currency_symbol;
-    if (rYearlyBtn && !rYearlyBtn.disabled) {
-      rYearlyBtn.innerHTML = 'Subscribe — ' + pricing.display_recruiter_yearly + '/yr';
-    }
-    // Table headers
-    const rMonthlyTh = document.getElementById('r-monthly-plan-header');
-    const rYearlyTh  = document.getElementById('r-yearly-plan-header');
-    if (rMonthlyTh) rMonthlyTh.textContent = 'Monthly ' + pricing.display_recruiter_monthly;
-    if (rYearlyTh)  rYearlyTh.textContent  = 'Yearly '  + pricing.display_recruiter_yearly;
-  }
-}
-
-/**
- * Called when navigating to the subscription page.
- * Looks up the user's stored phone (from authState) and fetches pricing.
- */
-async function loadAndApplyIntlPricing(role) {
-  let phone = '';
-  if (role === 'candidate' && authState.candidate.user) {
-    phone = authState.candidate.user.phone || '';
-  } else if (role === 'recruiter' && authState.recruiter.user) {
-    phone = authState.recruiter.user.phone || '';
-  }
-  const pricing = await fetchIntlPricing(phone);
-  applyIntlPricingToUI(pricing, role);
-}
-
-// ═══════════════════════════════════════════════════════
-//  SUBSCRIPTION / RAZORPAY
+//  SUBSCRIPTION / CASHFREE
 // ═══════════════════════════════════════════════════════
 async function activatePlan(plan) {
   const user = authState.candidate.user;
@@ -7178,48 +7078,64 @@ async function activatePlan(plan) {
       if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; }
     }
   } else {
-    await openRazorpay('candidate', plan, user);
+    await openCashfree('candidate', plan, user);
     if (btn) { btn.disabled = false; }
   }
 }
 
-async function openRazorpay(userType, planKey, user) {
+async function openCashfree(userType, planKey, user) {
   const loadingEl = document.getElementById('rzp-loading');
   if (loadingEl) loadingEl.style.display = '';
   try {
-    const res  = await apiPost('/api/subscription/create-order', { plan:planKey });
+    const res  = await apiPost('/api/subscription/create-order', { plan: planKey });
     const data = await res.json();
-    if (!res.ok) { if (loadingEl) loadingEl.style.display = 'none'; toast('❌ ' + (data.error || 'Could not create order'), 'err'); return; }
-    const options = {
-      key:         data.key_id,
-      amount:      data.amount,
-      currency:    data.currency,
-      order_id:    data.order_id,
-      name:        'HireFlow Automation',
-      description: data.plan_label || planKey,
-      handler: async function(response) {
+    if (!res.ok) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      toast('❌ ' + (data.error || 'Could not create order'), 'err');
+      return;
+    }
+
+    if (typeof Cashfree === 'undefined') {
+      if (loadingEl) loadingEl.style.display = 'none';
+      toast('❌ Payment gateway not loaded. Please refresh and try again.', 'err');
+      return;
+    }
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    const cashfree = Cashfree({ mode: 'production' });   // change to 'sandbox' for testing
+    cashfree.checkout({
+      paymentSessionId: data.payment_session_id,
+      redirectTarget:   '_modal',
+    }).then(async function(result) {
+      if (result.error) {
+        toast('❌ Payment failed: ' + (result.error.message || 'Unknown error'), 'err');
+        return;
+      }
+      if (result.paymentDetails) {
         if (loadingEl) loadingEl.style.display = '';
         const vRes  = await apiPost('/api/subscription/verify', {
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-          plan: planKey,
+          order_id:   data.order_id,
+          payment_id: result.paymentDetails.paymentMessage || '',
+          plan:       planKey,
         });
         const vData = await vRes.json();
         if (loadingEl) loadingEl.style.display = 'none';
-        if (!vRes.ok) { toast('❌ Payment verification failed: ' + (vData.error||''), 'err'); return; }
+        if (!vRes.ok) { toast('❌ Payment verification failed: ' + (vData.error || ''), 'err'); return; }
         toast('✅ ' + (vData.message || 'Subscription activated!'), 'ok', 5000);
-        if (userType === 'candidate') { _applyCandidateSubscription({ plan:planKey, days_left:vData.days, status:'active', expires_at: vData.expires_at }); showCandidateView('setup'); }
-        else { _applyRecruiterSubscription({ plan:planKey, days_left:vData.days, status:'active', expires_at: vData.expires_at }); showRecruiterView('setup'); }
-      },
-      modal: { ondismiss: function() { if (loadingEl) loadingEl.style.display = 'none'; toast('Payment cancelled.', 'info'); } },
-      prefill: { email: user.email },
-      theme:   { color: '#25d366' },
-    };
-    if (typeof Razorpay === 'undefined') { if (loadingEl) loadingEl.style.display = 'none'; toast('❌ Payment gateway not loaded. Please refresh and try again.', 'err'); return; }
-    if (loadingEl) loadingEl.style.display = 'none';
-    const rzp = new Razorpay(options);
-    rzp.open();
+        if (userType === 'candidate') {
+          _applyCandidateSubscription({ plan: planKey, days_left: vData.days, status: 'active', expires_at: vData.expires_at });
+          showCandidateView('setup');
+        } else {
+          _applyRecruiterSubscription({ plan: planKey, days_left: vData.days, status: 'active', expires_at: vData.expires_at });
+          showRecruiterView('setup');
+        }
+      }
+    }).catch(function(err) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      toast('Payment cancelled or failed.', 'info');
+    });
+
   } catch(e) {
     if (loadingEl) loadingEl.style.display = 'none';
     toast('Network error: ' + e, 'err');
@@ -8364,8 +8280,8 @@ async function adminSubRevoke() {
   } catch(e) { _showSubOverrideMsg('❌ Network error', 'err'); }
 }
 
-// ── Razorpay settings ──
-async function loadRazorpaySettings() {
+// ── Cashfree settings ──
+async function loadCashfreeSettings() {
   const icon = document.getElementById('rzp-status-icon');
   const text = document.getElementById('rzp-status-text');
   const sub  = document.getElementById('rzp-status-sub');
@@ -8373,30 +8289,30 @@ async function loadRazorpaySettings() {
   const masked = document.getElementById('rzp-current-masked');
   const updAt  = document.getElementById('rzp-updated-at');
   if (icon) icon.textContent = '⏳';
-  if (text) text.textContent = 'Checking Razorpay configuration…';
+  if (text) text.textContent = 'Checking Cashfree configuration…';
   try {
     const res  = await fetch(API_BASE + '/api/admin/payment-settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     const data = await res.json();
     if (!res.ok) { if (icon) icon.textContent = '❌'; if (text) text.textContent = 'Failed to load'; return; }
     if (data.configured) {
       if (icon) icon.textContent = '✅';
-      if (text) text.textContent = 'Razorpay is configured and active';
+      if (text) text.textContent = 'Cashfree is configured and active';
       if (sub)  sub.textContent  = data.source === 'env' ? 'Keys loaded from environment variables.' : 'Keys loaded from database.';
       const kidInput = document.getElementById('rzp-key-id');
-      if (kidInput && data.razorpay_key_id) kidInput.value = data.razorpay_key_id;
+      if (kidInput && data.cashfree_app_id) kidInput.value = data.cashfree_app_id;
       if (curRow) curRow.style.display  = '';
       if (masked) masked.textContent    = data.secret_masked || '';
       if (updAt && data.updated_at) updAt.textContent = '· Updated ' + new Date(data.updated_at).toLocaleString();
     } else {
       if (icon) icon.textContent = '⚠️';
-      if (text) text.textContent = 'Razorpay not configured';
-      if (sub)  sub.textContent  = 'Enter your API keys below to enable subscriptions.';
+      if (text) text.textContent = 'Cashfree not configured';
+      if (sub)  sub.textContent  = 'Enter your Cashfree App ID and Secret Key below to enable subscriptions.';
       if (curRow) curRow.style.display = 'none';
     }
   } catch(e) { if (icon) icon.textContent = '❌'; if (text) text.textContent = 'Network error'; }
 }
 
-async function saveRazorpaySettings() {
+async function saveCashfreeSettings() {
   const kid    = (document.getElementById('rzp-key-id')?.value     || '').trim();
   const secret = (document.getElementById('rzp-key-secret')?.value || '').trim();
   const msgEl  = document.getElementById('rzp-config-msg');
@@ -8415,13 +8331,13 @@ async function saveRazorpaySettings() {
   if (btnTxt)  btnTxt.style.display  = 'none';
   if (btnSpin) btnSpin.style.display = '';
   try {
-    const res  = await apiPost('/api/admin/payment-settings', { razorpay_key_id: kid, razorpay_key_secret: secret });
+    const res  = await apiPost('/api/admin/payment-settings', { cashfree_app_id: kid, cashfree_secret_key: secret });
     const data = await res.json();
     if (res.ok && data.ok) {
       if (msgEl) { msgEl.style.display=''; msgEl.style.color='var(--green)'; msgEl.textContent='✅ ' + data.message; }
       document.getElementById('rzp-key-secret').value = '';
-      toast('✅ Razorpay keys saved successfully!', 'ok');
-      await loadRazorpaySettings();
+      toast('✅ Cashfree keys saved successfully!', 'ok');
+      await loadCashfreeSettings();
     } else {
       if (msgEl) { msgEl.style.display=''; msgEl.style.color='var(--red)'; msgEl.textContent='❌ ' + (data.error || 'Save failed'); }
       toast('❌ ' + (data.error || 'Save failed'), 'err');
@@ -9242,7 +9158,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">💬</span>
         <span class="c-label">WhatsApp / Phone</span>
-        <span class="c-value"><a href="https://wa.me/91XXXXXXXXXX" target="_blank">+91 XXXXX XXXXX</a></span>
+        <span class="c-value"><a href="https://wa.me/917330854215" target="_blank">+91 7330854215</a></span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon">🕐</span>
@@ -9252,8 +9168,14 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">📍</span>
         <span class="c-label">Location</span>
-        <span class="c-value">India · Remote-first Team</span>
-      </div>
+         <span class="c-value">
+        11-86 ULLAKKI NAGAR<br>
+        PAMUDURTHI<br>
+        BUKKAPATNAM<br>
+        SRI SATHYASAI DIST<br>
+        ANDHRA PRADESH - 515154
+       </span>
+     </div>
     </div>
     <div class="contact-map-placeholder">
       🗺️ &nbsp; FutureHire Technologies — India<br>
