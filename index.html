@@ -5582,11 +5582,11 @@ select option{background:var(--s2);}
             <table class="report-table">
               <thead>
                 <tr>
-                  <th>User</th><th>Type</th><th>Plan</th><th>Start Date</th><th>Remaining Days</th><th>Status</th>
+                  <th>User</th><th>Type</th><th>Plan</th><th>Start Date</th><th>Remaining Days</th><th>Status</th><th>Payment ID</th><th>Dice Email</th>
                 </tr>
               </thead>
               <tbody id="a-users-tbody">
-                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;font-size:12px;">Loading users...</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;font-size:12px;">Loading users...</td></tr>
               </tbody>
             </table>
           </div>
@@ -7142,10 +7142,9 @@ async function openCashfree(userType, planKey, user) {
       }
       if (result.paymentDetails) {
         if (loadingEl) loadingEl.style.display = '';
-        // Use cf_payment_id from paymentDetails — paymentMessage is not the payment ID
+        // Use cf_payment_id from paymentDetails — paymentMessage is NOT a payment ID (it's a UI string like "Payment finished")
         const cfPaymentId = result.paymentDetails.cf_payment_id
           || result.paymentDetails.cfPaymentId
-          || result.paymentDetails.paymentMessage
           || '';
         const vRes  = await apiPost('/api/subscription/verify', {
           order_id:   data.order_id,
@@ -8183,12 +8182,14 @@ async function loadAdminDashboard() {
     const tbody = document.getElementById('a-users-tbody');
     if (tbody) {
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;font-size:12px;">No users found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;font-size:12px;">No users found.</td></tr>';
       } else {
         tbody.innerHTML = users.map(u => {
           const cls = u.status === 'active' ? (u.plan === 'trial' ? 'trial' : 'active') : 'expired';
           const started = u.started_at ? formatDate(u.started_at) : '—';
-          return `<tr><td><strong>${escHtml(u.name)}</strong><br><span style="font-size:10.5px;color:var(--text3)">${escHtml(u.email)}</span></td><td style="color:var(--text3);font-size:12px">${escHtml(u.type)}</td><td><span class="pill purple">${escHtml(u.plan_label||'—')}</span></td><td style="color:var(--text3);font-size:11px">${started}</td><td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent2)">${u.days_left ?? 0}d</td><td><span class="sub-badge ${cls}">${escHtml(u.status)}</span></td></tr>`;
+          const paymentId = u.payment_id || '—';
+          const diceEmail = u.dice_email || '—';
+          return `<tr><td><strong>${escHtml(u.name)}</strong><br><span style="font-size:10.5px;color:var(--text3)">${escHtml(u.email)}</span></td><td style="color:var(--text3);font-size:12px">${escHtml(u.type)}</td><td><span class="pill purple">${escHtml(u.plan_label||'—')}</span></td><td style="color:var(--text3);font-size:11px">${started}</td><td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent2)">${u.days_left ?? 0}d</td><td><span class="sub-badge ${cls}">${escHtml(u.status)}</span></td><td style="color:var(--text3);font-size:10.5px;font-family:monospace">${escHtml(paymentId)}</td><td style="color:var(--text3);font-size:10.5px">${escHtml(diceEmail)}</td></tr>`;
         }).join('');
       }
     }
