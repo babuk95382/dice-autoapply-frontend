@@ -6887,11 +6887,18 @@ async function activateRecruiterPlan(plan) {
     try {
       const res  = await apiPost('/api/subscription/create-order', { plan });
       const data = await safeJson(res);
-      if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); return; }
-      toast('✅ Free trial activated!', 'ok');
+      if (!res.ok) {
+        toast('❌ ' + (data.error || 'Could not activate trial'), 'err');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
+        return;
+      }
+      _applyRecruiterSubscription({ plan: 'recruiter_trial', days_left: data.days || 3, status: 'active' });
+      toast('✅ Free trial activated! 3 days of full access.', 'ok', 5000);
       showRecruiterView('setup');
-    } catch(e) { toast('Network error', 'err'); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
+    } catch(e) {
+      toast('Network error activating trial.', 'err');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
+    }
   } else {
     await openCashfree('recruiter', plan, user);
     if (btn) { btn.disabled = false; }
@@ -7124,7 +7131,7 @@ async function openCashfree(userType, planKey, user) {
 
     if (loadingEl) loadingEl.style.display = 'none';
 
-    const cashfree = Cashfree({ mode: data.cf_mode || 'production' });  // FIX: mode driven by backend env
+    const cashfree = Cashfree({ mode: data.cf_mode || 'production' });  // mode driven by backend env
     cashfree.checkout({
       paymentSessionId: data.payment_session_id,
       redirectTarget:   '_modal',
@@ -7135,12 +7142,17 @@ async function openCashfree(userType, planKey, user) {
       }
       if (result.paymentDetails) {
         if (loadingEl) loadingEl.style.display = '';
+        // Use cf_payment_id from paymentDetails — paymentMessage is not the payment ID
+        const cfPaymentId = result.paymentDetails.cf_payment_id
+          || result.paymentDetails.cfPaymentId
+          || result.paymentDetails.paymentMessage
+          || '';
         const vRes  = await apiPost('/api/subscription/verify', {
           order_id:   data.order_id,
-          payment_id: result.paymentDetails.paymentMessage || '',
+          payment_id: cfPaymentId,
           plan:       planKey,
         });
-        const vData = await safeJson(vRes);  // FIX: was vRes.json()
+        const vData = await safeJson(vRes);
         if (loadingEl) loadingEl.style.display = 'none';
         if (!vRes.ok) { toast('❌ Payment verification failed: ' + (vData.error || ''), 'err'); return; }
         toast('✅ ' + (vData.message || 'Subscription activated!'), 'ok', 5000);
@@ -7150,6 +7162,26 @@ async function openCashfree(userType, planKey, user) {
         } else {
           _applyRecruiterSubscription({ plan: planKey, days_left: vData.days, status: 'active', expires_at: vData.expires_at });
           showRecruiterView('setup');
+        }
+      } else {
+        // paymentDetails missing — still try to verify using order_id alone
+        if (loadingEl) loadingEl.style.display = '';
+        const vRes  = await apiPost('/api/subscription/verify', {
+          order_id:   data.order_id,
+          payment_id: '',
+          plan:       planKey,
+        });
+        const vData = await safeJson(vRes);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (vRes.ok) {
+          toast('✅ ' + (vData.message || 'Subscription activated!'), 'ok', 5000);
+          if (userType === 'candidate') {
+            _applyCandidateSubscription({ plan: planKey, days_left: vData.days, status: 'active', expires_at: vData.expires_at });
+            showCandidateView('setup');
+          } else {
+            _applyRecruiterSubscription({ plan: planKey, days_left: vData.days, status: 'active', expires_at: vData.expires_at });
+            showRecruiterView('setup');
+          }
         }
       }
     }).catch(function(err) {
