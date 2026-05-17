@@ -6028,7 +6028,7 @@ function getCookie(name) {
 async function _initCsrfToken() {
   try {
     const res = await fetch(API_BASE + '/api/csrf', { credentials: 'include' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (data && data.csrf_token) _csrfToken = data.csrf_token;
   } catch(e) {
     console.warn('Could not fetch CSRF token', e);
@@ -6060,6 +6060,27 @@ async function _tryRefreshToken() {
     return false;
   } finally {
     _refreshing = false;
+  }
+}
+
+// FIX: safe JSON parser — never throws on HTML error pages
+async function safeJson(res) {
+  try {
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch(_) {
+    // Server returned HTML (404/500 page) instead of JSON
+    // Map common HTTP statuses to a readable message
+    const statusMap = {
+      401: 'Session expired — please log in again.',
+      403: 'Access denied.',
+      404: 'API endpoint not found. Is the backend running?',
+      429: 'Too many requests — please wait a moment.',
+      500: 'Server error — check backend logs.',
+      502: 'Backend unreachable (502). Is the server running?',
+      503: 'Backend unavailable (503). Is the server running?',
+    };
+    return { error: statusMap[res.status] || `Server error (HTTP ${res.status}) — backend may be down.` };
   }
 }
 
@@ -6473,7 +6494,7 @@ async function candidateLogin() {
   showMsg(msg, 'Signing in…', 'info');
   try {
     const res  = await apiPost('/api/auth/candidate/login', { email, password: pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
     await _initCsrfToken();
     authState.candidate.loggedIn = true;
@@ -6534,7 +6555,7 @@ async function candidateSendOtp() {
   try {
     // Step 1: send OTP — uses the correct endpoint with role param
     const res  = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err'); return; }
     // Show OTP entry step
     document.getElementById('c-signup-step1').style.display = 'none';
@@ -6563,13 +6584,13 @@ async function candidateVerifyOtp() {
   try {
     // Step 2: verify OTP first — marks the OTP record as verified server-side
     const vRes  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'candidate' });
-    const vData = await vRes.json();
+    const vData = await safeJson(vRes);
     if (!vRes.ok) { showMsg(msg, '❌ ' + (vData.error || 'OTP verification failed'), 'err'); return; }
 
     // Step 3: create account now that OTP is verified
     showMsg(msg, 'Creating your account…', 'info');
     const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
@@ -6592,7 +6613,7 @@ async function candidateResendOtp() {
   try {
     // Uses the correct generic endpoint with role param
     const res = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to resend'), 'err'); return; }
     showMsg(msg, '✅ New OTP sent! Check your inbox.', 'ok');
   } catch(e) {
@@ -6697,7 +6718,7 @@ async function recruiterLogin() {
   showMsg(msg, 'Signing in…', 'info');
   try {
     const res  = await apiPost('/api/auth/recruiter/login', { email, password: pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
     await _initCsrfToken();
     authState.recruiter.loggedIn = true;
@@ -6740,7 +6761,7 @@ async function recruiterSendOtp() {
   try {
     // Step 1: send OTP — uses the correct endpoint with role param
     const res  = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err'); return; }
     document.getElementById('r-signup-step1').style.display = 'none';
     document.getElementById('r-signup-step2').style.display = '';
@@ -6768,13 +6789,13 @@ async function recruiterVerifyOtp() {
   try {
     // Step 2: verify OTP — marks the record as verified server-side
     const vRes  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'recruiter' });
-    const vData = await vRes.json();
+    const vData = await safeJson(vRes);
     if (!vRes.ok) { showMsg(msg, '❌ ' + (vData.error || 'OTP verification failed'), 'err'); return; }
 
     // Step 3: create account now that OTP is verified
     showMsg(msg, 'Creating your account…', 'info');
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
@@ -6797,7 +6818,7 @@ async function recruiterResendOtp() {
   showMsg(msg, 'Resending OTP…', 'info');
   try {
     const res = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Failed to resend'), 'err'); return; }
     showMsg(msg, '✅ New OTP sent! Check your inbox.', 'ok');
   } catch(e) {
@@ -6865,7 +6886,7 @@ async function activateRecruiterPlan(plan) {
   if (plan === 'trial' || plan === 'recruiter_trial') {
     try {
       const res  = await apiPost('/api/subscription/create-order', { plan });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); return; }
       toast('✅ Free trial activated!', 'ok');
       showRecruiterView('setup');
@@ -6905,7 +6926,7 @@ async function adminLogin() {
   showMsg(msg, 'Verifying…', 'info');
   try {
     const res  = await apiPost('/api/auth/admin/login', { email, password: pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid credentials'), 'err'); return; }
     await _initCsrfToken();
     authState.admin.loggedIn = true;
@@ -6924,7 +6945,7 @@ async function adminLogin() {
     if (liveSection) liveSection.style.display = '';
     setTimeout(async () => {
       const sbRes = await fetch(API_BASE + '/api/supabase/status', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-      const sbData = sbRes.ok ? await sbRes.json() : {};
+      const sbData = sbRes.ok ? await safeJson(sbRes) : {};
       const resEl = document.getElementById('a-search-results');
       if (!sbData.configured) {
         if (resEl) resEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0"><div style="font-size:28px">🔌</div><div style="color:var(--text3);font-size:13px;font-weight:600">Supabase Not Connected</div></div>`;
@@ -6980,7 +7001,7 @@ async function saveCandidateDetails() {
       toggleCandidateEditMode(false);
       _updateLockedEmailDisplay(email);
     } else {
-      const d = await res.json();
+      const d = await safeJson(res);
       toast('❌ ' + (d.error || 'Save failed'), 'err');
     }
   } catch(e) { toast('Network error while saving.', 'err'); }
@@ -7016,7 +7037,7 @@ async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
   try {
     const res  = await fetch(`${API_BASE}/api/candidate/details`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.found && data.details) {
       const d = data.details;
       if (d.dice_email) { document.getElementById('s-email').value = d.dice_email; _updateLockedEmailDisplay(d.dice_email); }
@@ -7068,7 +7089,7 @@ async function activatePlan(plan) {
   if (plan === 'trial') {
     try {
       const res  = await apiPost('/api/subscription/create-order', { plan:'trial' });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; } return; }
       _applyCandidateSubscription({ plan:'trial', days_left: data.days || 3, status:'active' });
       toast('✅ Free trial activated! 3 days of full access.', 'ok', 5000);
@@ -7088,7 +7109,7 @@ async function openCashfree(userType, planKey, user) {
   if (loadingEl) loadingEl.style.display = '';
   try {
     const res  = await apiPost('/api/subscription/create-order', { plan: planKey });
-    const data = await res.json();
+    const data = await safeJson(res);  // FIX: was res.json() — crashed on HTML error pages
     if (!res.ok) {
       if (loadingEl) loadingEl.style.display = 'none';
       toast('❌ ' + (data.error || 'Could not create order'), 'err');
@@ -7119,7 +7140,7 @@ async function openCashfree(userType, planKey, user) {
           payment_id: result.paymentDetails.paymentMessage || '',
           plan:       planKey,
         });
-        const vData = await vRes.json();
+        const vData = await safeJson(vRes);  // FIX: was vRes.json()
         if (loadingEl) loadingEl.style.display = 'none';
         if (!vRes.ok) { toast('❌ Payment verification failed: ' + (vData.error || ''), 'err'); return; }
         toast('✅ ' + (vData.message || 'Subscription activated!'), 'ok', 5000);
@@ -7138,7 +7159,7 @@ async function openCashfree(userType, planKey, user) {
 
   } catch(e) {
     if (loadingEl) loadingEl.style.display = 'none';
-    toast('Network error: ' + e, 'err');
+    toast('❌ ' + (e.message || 'Network error — is the backend running?'), 'err');
   }
 }
 
@@ -7226,7 +7247,7 @@ async function loadRecruiterCandidates() {
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="rc-empty"><div class="skeleton-line skeleton" style="width:60%;margin:0 auto 8px"></div></td></tr>';
   try {
     const res  = await fetch(`${API_BASE}/api/recruiter/candidates`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) { renderRcTable(); return; }
     rcCandidates = data.candidates || [];
     rcCandidates.forEach(c => {
@@ -7394,7 +7415,7 @@ async function saveRcCandidate() {
     } else {
       res = await apiPost('/api/recruiter/candidates', body);
     }
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) {
       if (data.limit_reached) showErr('❌ Maximum 10 candidates reached.');
       else if (data.email_change_limit) showErr('❌ Email changed 3 times already. Cannot change further.');
@@ -7444,7 +7465,7 @@ async function deleteRcCandidate(id) {
       renderRcTable(); updateStats(); syncCandidatesFromRc(); updateSelectionBar();
       toast('Candidate deleted.', 'info');
     } else {
-      const d = await res.json();
+      const d = await safeJson(res);
       toast('Delete failed: ' + (d.error || 'Unknown error'), 'err');
     }
   } catch(e) { toast('Network error: ' + e, 'err'); }
@@ -7478,7 +7499,7 @@ async function loadRecruiterReport() {
   }
   try {
     const res  = await fetch(url, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) { wrap.innerHTML = `<div style="color:var(--red);font-size:12px">${escHtml(data.error||'Failed to load report')}</div>`; return; }
     const s = data.summary || {};
     setStatNum('rpt-applied', s.applied || 0);
@@ -7630,7 +7651,7 @@ async function startJob(jobMode) {
     return;
   }
 
-  const data = await res.json();
+  const data = await safeJson(res);
   if (!res.ok || data.error) {
     setStatus('error', 'Error');
     if (runBtn)  runBtn.disabled = false;
@@ -7656,7 +7677,7 @@ async function startJob(jobMode) {
   let sseToken = '';
   try {
     const tokenRes  = await apiFetch('/api/auth/token');
-    const tokenData = await tokenRes.json();
+    const tokenData = await safeJson(tokenRes);
     if (tokenData.ok) sseToken = tokenData.token;
   } catch(e) {}
   evtSource = new EventSource(`${API_BASE}/api/logs/${currentJobId}${sseToken ? '?token=' + encodeURIComponent(sseToken) : ''}`);
@@ -7743,7 +7764,7 @@ function startRecruiterPolling(jobId) {
         }
         return;
       }
-      const data = await res.json();
+      const data = await safeJson(res);
       setStatNum('rd-total-applied', data.totals?.applied ?? 0);
       setStatNum('rd-total-skipped', data.totals?.already ?? 0);
       setStatNum('rd-total-failed',  data.totals?.failed  ?? 0);
@@ -7798,7 +7819,7 @@ async function pollLiveDashboard() {
     if (uid && utype) url += `?user_id=${encodeURIComponent(uid)}&user_type=${utype}`;
     const res  = await apiFetch(url);
     if (!res.ok) return;
-    const data = await res.json();
+    const data = await safeJson(res);
     const db = data.db_summary || {};
     setStatNum('live-total-applied', db.applied || 0);
     setStatNum('live-total-already', db.already || 0);
@@ -7864,7 +7885,7 @@ function startAdminDashboardPolling() {
     try {
       const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
       if (!res.ok) return;
-      const data = await res.json();
+      const data = await safeJson(res);
       setStatNum('a-active',        data.active_runners ?? 0);
       setStatNum('a-total-users',   data.total_users    ?? 0);
       setStatNum('a-total-applied', data.jobs_today     ?? 0);
@@ -7880,7 +7901,7 @@ function startBackgroundPolling() {
     try {
       const res  = await fetch(API_BASE + '/api/live/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
       if (!res.ok) return;
-      const data = await res.json();
+      const data = await safeJson(res);
       if (authState.admin.loggedIn) setStatNum('a-active', (data.active_jobs||[]).filter(j => j.is_alive).length);
     } catch(e) {}
   }, 5000);
@@ -7896,8 +7917,8 @@ async function showHistory() {
   body.innerHTML = '<div style="color:var(--text3);font-family:\'DM Mono\',monospace;font-size:13px;padding:20px 0">Loading…</div>';
   try {
     const res = await fetch(API_BASE + '/api/runs', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    if (!res.ok) { const d = await res.json(); body.innerHTML = `<div style="color:var(--red);padding:12px">${escHtml(d.error||'Failed')}</div>`; return; }
-    const { runs } = await res.json();
+    if (!res.ok) { const d = await safeJson(res); body.innerHTML = `<div style="color:var(--red);padding:12px">${escHtml(d.error||'Failed')}</div>`; return; }
+    const { runs } = await safeJson(res);
     if (!runs || runs.length === 0) { body.innerHTML = '<div style="color:var(--text3);padding:20px;text-align:center">No runs recorded yet.</div>'; return; }
     body.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px;font-family:'DM Mono',monospace">
       <thead><tr style="background:var(--s2);border-bottom:1px solid var(--border2)"><th style="padding:10px 12px;text-align:left;color:var(--text3);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Date</th><th style="padding:10px 12px;text-align:left;color:var(--text3);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Email</th><th style="padding:10px 12px;text-align:left;color:var(--text3);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Technology</th><th style="padding:10px 12px;text-align:center;color:var(--green);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Applied</th><th style="padding:10px 12px;text-align:center;color:var(--amber);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Already</th><th style="padding:10px 12px;text-align:center;color:var(--red);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">Failed</th></tr></thead>
@@ -8097,7 +8118,7 @@ async function saveAutomationSettings() {
   const msg = document.getElementById('a-settings-msg');
   try {
     const res = await apiPost('/api/admin/settings', { batch_size: batch, headless, max_parallel: parallel });
-    const data = await res.json();
+    const data = await safeJson(res);
     msg.style.display = 'block';
     if (res.ok) { msg.style.color = 'var(--green)'; msg.textContent = '✅ Settings saved.'; }
     else { msg.style.color = 'var(--red)'; msg.textContent = '❌ ' + (data.error || 'Save failed'); }
@@ -8108,7 +8129,7 @@ async function saveAutomationSettings() {
 async function loadAdminSettings() {
   try {
     const res = await fetch(API_BASE + '/api/admin/settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok) {
       document.getElementById('a-cand-batch').value    = data.batch_size   || 10;
       document.getElementById('a-cand-headless').value = data.headless ? 'true' : 'false';
@@ -8121,7 +8142,7 @@ async function loadAdminDashboard() {
   try {
     const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     if (!res.ok) return;
-    const data = await res.json();
+    const data = await safeJson(res);
     setStatNum('a-active',        data.active_runners ?? 0);
     setStatNum('a-queue',         0);
     setStatNum('a-total-users',   data.total_users    ?? 0);
@@ -8182,7 +8203,7 @@ async function runAdminSearch() {
     if (dateTo)   url += `&date_to=${encodeURIComponent(dateTo)}`;
     const res  = await apiFetch(url, { credentials: 'include' });
     if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
+      const d = await safeJson(res).catch(() => ({}));
       const errMsg = d.error || 'Search failed';
       if (errMsg.toLowerCase().includes('supabase') || res.status === 503) {
         resEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0"><div style="font-size:28px">🔌</div><div style="color:var(--text3);font-size:13px;font-weight:600">Supabase Not Connected</div></div>`;
@@ -8191,7 +8212,7 @@ async function runAdminSearch() {
       }
       return;
     }
-    const data    = await res.json();
+    const data    = await safeJson(res);
     const results = data.results || [];
     if (results.length === 0) { resEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0;text-align:center">No results found.</div>'; return; }
     resEl.innerHTML = `<div style="font-size:11px;color:var(--text3);margin-bottom:10px">${results.length} result${results.length !== 1 ? 's' : ''} found</div>` +
@@ -8212,7 +8233,7 @@ function exportAdminReport() { window.open('/api/admin/export/users', '_blank');
 async function _resolveUserId(email, userType) {
   try {
     const res = await fetch(`${API_BASE}/api/admin/search?q=${encodeURIComponent(email)}`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) return null;
     const match = (data.results || []).find(u => u.email.toLowerCase() === email.toLowerCase() && u.type.toLowerCase() === userType.toLowerCase());
     return match ? match.id : null;
@@ -8241,7 +8262,7 @@ async function adminSubGrant() {
   if (!userId) { _showSubOverrideMsg('User not found. Check email and type.', 'err'); return; }
   try {
     const res  = await apiPost('/api/admin/subscription/grant', { user_id: userId, user_type: userType, plan, days });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) { _showSubOverrideMsg('✅ ' + data.message, 'ok'); loadAdminDashboard(); }
     else { _showSubOverrideMsg('❌ ' + (data.error || 'Failed'), 'err'); }
   } catch(e) { _showSubOverrideMsg('❌ Network error', 'err'); }
@@ -8258,7 +8279,7 @@ async function adminSubExtend() {
   if (!userId) { _showSubOverrideMsg('User not found.', 'err'); return; }
   try {
     const res  = await apiPost('/api/admin/subscription/extend', { user_id: userId, user_type: userType, days });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) { _showSubOverrideMsg('✅ ' + data.message, 'ok'); loadAdminDashboard(); }
     else { _showSubOverrideMsg('❌ ' + (data.error || 'Failed'), 'err'); }
   } catch(e) { _showSubOverrideMsg('❌ Network error', 'err'); }
@@ -8274,7 +8295,7 @@ async function adminSubRevoke() {
   if (!userId) { _showSubOverrideMsg('User not found.', 'err'); return; }
   try {
     const res  = await apiPost('/api/admin/subscription/revoke', { user_id: userId, user_type: userType });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) { _showSubOverrideMsg('✅ Subscription revoked.', 'ok'); loadAdminDashboard(); }
     else { _showSubOverrideMsg('❌ ' + (data.error || 'Failed'), 'err'); }
   } catch(e) { _showSubOverrideMsg('❌ Network error', 'err'); }
@@ -8292,7 +8313,7 @@ async function loadCashfreeSettings() {
   if (text) text.textContent = 'Checking Cashfree configuration…';
   try {
     const res  = await fetch(API_BASE + '/api/admin/payment-settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { if (icon) icon.textContent = '❌'; if (text) text.textContent = 'Failed to load'; return; }
     if (data.configured) {
       if (icon) icon.textContent = '✅';
@@ -8324,15 +8345,15 @@ async function saveCashfreeSettings() {
   if (secErr) { secErr.style.display = 'none'; }
   if (msgEl)  { msgEl.style.display  = 'none'; }
   let valid = true;
-  if (!kid) { if (kidErr) { kidErr.textContent = 'App ID is required'; kidErr.style.display = ''; } valid = false; }
-  else if (kid.length < 8) { if (kidErr) { kidErr.textContent = 'App ID appears too short'; kidErr.style.display = ''; } valid = false; }
-  if (!secret) { if (secErr) { secErr.textContent = 'Secret Key is required'; secErr.style.display = ''; } valid = false; }
+  if (!kid) { if (kidErr) { kidErr.textContent = 'Key ID is required'; kidErr.style.display = ''; } valid = false; }
+  else if (!kid.startsWith('rzp_live_') && !kid.startsWith('rzp_test_')) { if (kidErr) { kidErr.textContent = 'Must start with rzp_live_ or rzp_test_'; kidErr.style.display = ''; } valid = false; }
+  if (!secret) { if (secErr) { secErr.textContent = 'Key Secret is required'; secErr.style.display = ''; } valid = false; }
   if (!valid) return;
   if (btnTxt)  btnTxt.style.display  = 'none';
   if (btnSpin) btnSpin.style.display = '';
   try {
     const res  = await apiPost('/api/admin/payment-settings', { cashfree_app_id: kid, cashfree_secret_key: secret });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) {
       if (msgEl) { msgEl.style.display=''; msgEl.style.color='var(--green)'; msgEl.textContent='✅ ' + data.message; }
       document.getElementById('rzp-key-secret').value = '';
@@ -8360,7 +8381,7 @@ function toggleRzpSecretVisibility() {
 async function checkSupabaseStatus() {
   try {
     const res = await fetch(API_BASE + '/api/supabase/status', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const d   = await res.json();
+    const d   = await safeJson(res);
     const badge = document.getElementById('sb-badge');
     const icon  = document.getElementById('sb-status-icon');
     const text  = document.getElementById('sb-status-text');
@@ -8392,7 +8413,7 @@ async function saveSupabaseConfig() {
   if (msg) msg.style.display = 'none';
   try {
     const res  = await apiPost('/api/config/supabase', { url, key });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) {
       if (msg) { msg.style.display='block'; msg.style.color='var(--green)'; msg.textContent='✅ Supabase connected successfully!'; }
       const keyInp = document.getElementById('sb-key-input');
@@ -8445,7 +8466,7 @@ async function loadEmailSettings() {
   if (text) text.textContent = 'Checking email configuration…';
   try {
     const res  = await fetch(API_BASE + '/api/admin/email-settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) { if (icon) icon.textContent = '❌'; if (text) text.textContent = 'Failed to load settings'; return; }
     const s = data.settings;
     if (!s) { if (icon) icon.textContent = '⚙️'; if (text) text.textContent = 'Not configured'; if (badge) badge.style.display = 'none'; return; }
@@ -8483,7 +8504,7 @@ async function saveEmailSettings() {
       smtp_password: document.getElementById('email-smtp-pass').value,
     };
     const res  = await apiPost('/api/admin/email-settings', payload);
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) { _showEmailMsg('✅ Email settings saved.', 'ok'); loadEmailSettings(); }
     else { _showEmailMsg('❌ ' + (data.error || 'Save failed'), 'err'); }
   } catch(e) { _showEmailMsg('❌ Network error', 'err'); }
@@ -8499,7 +8520,7 @@ async function sendTestEmail() {
   btn.disabled = true;
   try {
     const res  = await apiPost('/api/admin/test-email', { to_email: toEmail });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) _showEmailMsg('✅ ' + data.message, 'ok');
     else _showEmailMsg('❌ ' + (data.error || 'Failed to send'), 'err');
   } catch(e) { _showEmailMsg('❌ Network error', 'err'); }
@@ -8512,7 +8533,7 @@ async function sendReminders() {
   msgEl.style.color = 'var(--text3)'; msgEl.textContent = '⏳ Sending…';
   try {
     const res  = await apiPost('/api/admin/send-reminders', { days_before: parseInt(days) });
-    const data = await res.json();
+    const data = await safeJson(res);
     msgEl.style.color = res.ok && data.ok ? 'var(--green)' : 'var(--red)';
     msgEl.textContent = res.ok && data.ok ? '✅ ' + data.message : '❌ ' + (data.error || 'Failed');
   } catch(e) { msgEl.style.color = 'var(--red)'; msgEl.textContent = '❌ Network error'; }
@@ -8523,7 +8544,7 @@ async function sendReminders() {
 async function loadEmailTemplates() {
   try {
     const res  = await fetch(API_BASE + '/api/admin/email-templates', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok || !data.ok) return;
     _emailTemplates = data.templates || [];
     const sel = document.getElementById('tpl-select');
@@ -8569,7 +8590,7 @@ async function saveTemplate() {
   if (!name) { _showTplMsg('Select a template first.', 'err'); return; }
   try {
     const res  = await apiPost('/api/admin/email-template', { template_name: name, subject, body_html: bodyHtml, is_active: isActive });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) { _showTplMsg('✅ Template saved.', 'ok'); loadEmailTemplates(); }
     else { _showTplMsg('❌ ' + (data.error || 'Save failed'), 'err'); }
   } catch(e) { _showTplMsg('❌ Network error', 'err'); }
@@ -8584,7 +8605,7 @@ async function testTemplate() {
   btn.textContent = '⏳ Sending…'; btn.disabled = true;
   try {
     const res  = await apiPost('/api/admin/test-template', { template_name: name, to_email: toEmail });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (res.ok && data.ok) _showTplMsg('✅ ' + data.message, 'ok');
     else _showTplMsg('❌ ' + (data.error || 'Failed'), 'err');
   } catch(e) { _showTplMsg('❌ Network error', 'err'); }
@@ -8822,7 +8843,7 @@ async function cSuSendOtp(isResend = false) {
   showMsg(msg, 'Sending OTP…', 'info');
   try {
     const res  = await apiPost('/api/auth/send-otp', { email, role: 'candidate' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) {
       showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
       sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
@@ -8850,7 +8871,7 @@ async function cSuVerifyOtp() {
   verBtn.disabled = true; verBtn.textContent = 'Verifying…';
   try {
     const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'candidate' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid OTP'), 'err'); verBtn.disabled = false; verBtn.textContent = 'Verify'; return; }
     _otpState.c_su.verified = true;
     document.getElementById('c-su-otp-verified-badge').style.display = '';
@@ -8878,7 +8899,7 @@ async function cSuSubmitSignup() {
   showMsg(msg, 'Creating your account…', 'info');
   try {
     const res  = await apiPost('/api/auth/candidate/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
@@ -8940,7 +8961,7 @@ async function cFpResetPassword() {
   setBtnLoading('c-fp-reset-btn', true, 'Resetting…');
   try {
     const res  = await apiPost('/api/auth/forgot-password/verify', { email, otp, new_password: newPass, role: 'candidate' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err'); return; }
     showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
     setTimeout(() => showCandidateView('login'), 2000);
@@ -8958,7 +8979,7 @@ async function rSuSendOtp(isResend = false) {
   showMsg(msg, 'Sending OTP…', 'info');
   try {
     const res  = await apiPost('/api/auth/send-otp', { email, role: 'recruiter' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) {
       showMsg(msg, '❌ ' + (data.error || 'Failed to send OTP'), 'err');
       sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
@@ -8986,7 +9007,7 @@ async function rSuVerifyOtp() {
   verBtn.disabled = true; verBtn.textContent = 'Verifying…';
   try {
     const res  = await apiPost('/api/auth/verify-signup-otp', { email, otp, role: 'recruiter' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid OTP'), 'err'); verBtn.disabled = false; verBtn.textContent = 'Verify'; return; }
     _otpState.r_su.verified = true;
     document.getElementById('r-su-otp-verified-badge').style.display = '';
@@ -9014,7 +9035,7 @@ async function rSuSubmitSignup() {
   showMsg(msg, 'Creating your account…', 'info');
   try {
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
@@ -9077,7 +9098,7 @@ async function rFpResetPassword() {
   setBtnLoading('r-fp-reset-btn', true, 'Resetting…');
   try {
     const res  = await apiPost('/api/auth/forgot-password/verify', { email, otp, new_password: newPass, role: 'recruiter' });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Reset failed'), 'err'); return; }
     showMsg(msg, '✅ Password reset! Redirecting to login…', 'ok');
     setTimeout(() => showRecruiterView('login'), 2000);
@@ -9158,7 +9179,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">💬</span>
         <span class="c-label">WhatsApp / Phone</span>
-        <span class="c-value"><a href="https://wa.me/917330854215" target="_blank">+91 7330854215</a></span>
+        <span class="c-value"><a href="https://wa.me/91XXXXXXXXXX" target="_blank">+91 XXXXX XXXXX</a></span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon">🕐</span>
@@ -9168,13 +9189,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">📍</span>
         <span class="c-label">Location</span>
-        <span class="c-value">
-       11-86 ULLAKKI NAGAR<br>
-       PAMUDURTHI<br>
-       BUKKAPATNAM<br>
-       SRI SATHYASAI DIST<br>
-       ANDHRA PRADESH - 515154
-      </span>
+        <span class="c-value">India · Remote-first Team</span>
       </div>
     </div>
     <div class="contact-map-placeholder">
