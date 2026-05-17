@@ -7103,7 +7103,7 @@ async function openCashfree(userType, planKey, user) {
 
     if (loadingEl) loadingEl.style.display = 'none';
 
-    const cashfree = Cashfree({ mode: 'production' });   // change to 'sandbox' for testing
+    const cashfree = Cashfree({ mode: data.cf_mode || 'production' });  // FIX: mode driven by backend env
     cashfree.checkout({
       paymentSessionId: data.payment_session_id,
       redirectTarget:   '_modal',
@@ -8324,9 +8324,9 @@ async function saveCashfreeSettings() {
   if (secErr) { secErr.style.display = 'none'; }
   if (msgEl)  { msgEl.style.display  = 'none'; }
   let valid = true;
-  if (!kid) { if (kidErr) { kidErr.textContent = 'Key ID is required'; kidErr.style.display = ''; } valid = false; }
+  if (!kid) { if (kidErr) { kidErr.textContent = 'App ID is required'; kidErr.style.display = ''; } valid = false; }
   else if (kid.length < 8) { if (kidErr) { kidErr.textContent = 'App ID appears too short'; kidErr.style.display = ''; } valid = false; }
-  if (!secret) { if (secErr) { secErr.textContent = 'Key Secret is required'; secErr.style.display = ''; } valid = false; }
+  if (!secret) { if (secErr) { secErr.textContent = 'Secret Key is required'; secErr.style.display = ''; } valid = false; }
   if (!valid) return;
   if (btnTxt)  btnTxt.style.display  = 'none';
   if (btnSpin) btnSpin.style.display = '';
@@ -9168,14 +9168,14 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="contact-info-card">
         <span class="c-icon">📍</span>
         <span class="c-label">Location</span>
-         <span class="c-value">
-        11-86 ULLAKKI NAGAR<br>
-        PAMUDURTHI<br>
-        BUKKAPATNAM<br>
-        SRI SATHYASAI DIST<br>
-        ANDHRA PRADESH - 515154
-       </span>
-     </div>
+        <span class="c-value">
+       11-86 ULLAKKI NAGAR<br>
+       PAMUDURTHI<br>
+       BUKKAPATNAM<br>
+       SRI SATHYASAI DIST<br>
+       ANDHRA PRADESH - 515154
+      </span>
+      </div>
     </div>
     <div class="contact-map-placeholder">
       🗺️ &nbsp; FutureHire Technologies — India<br>
