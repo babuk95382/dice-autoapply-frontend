@@ -8325,7 +8325,7 @@ async function saveCashfreeSettings() {
   if (msgEl)  { msgEl.style.display  = 'none'; }
   let valid = true;
   if (!kid) { if (kidErr) { kidErr.textContent = 'Key ID is required'; kidErr.style.display = ''; } valid = false; }
-  else if (!kid.startsWith('rzp_live_') && !kid.startsWith('rzp_test_')) { if (kidErr) { kidErr.textContent = 'Must start with rzp_live_ or rzp_test_'; kidErr.style.display = ''; } valid = false; }
+  else if (kid.length < 8) { if (kidErr) { kidErr.textContent = 'App ID appears too short'; kidErr.style.display = ''; } valid = false; }
   if (!secret) { if (secErr) { secErr.textContent = 'Key Secret is required'; secErr.style.display = ''; } valid = false; }
   if (!valid) return;
   if (btnTxt)  btnTxt.style.display  = 'none';
