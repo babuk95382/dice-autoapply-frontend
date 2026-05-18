@@ -74,7 +74,7 @@
   --r:    10px;
   --r-lg: 16px;
   --r-xl: 22px;
-  --r-full: 999px;
+  --r-full: px;
 
   /* Transitions */
   --transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -664,7 +664,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .btn-stop.visible{display:flex;}
 
 /* ── Toasts ── */
-#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
 .toast{
   display:flex;align-items:center;gap:10px;
   background:var(--glass-1);border:1px solid var(--glass-border-strong);
@@ -1289,7 +1289,7 @@ select option{background:var(--s2);}
 .pricing-toggle-label.active{color:var(--text);}
 .pricing-toggle{position:relative;width:52px;height:28px;cursor:pointer;flex-shrink:0;}
 .pricing-toggle input{opacity:0;width:0;height:0;}
-.pricing-toggle-slider{position:absolute;inset:0;background:var(--glass-2);border:1px solid var(--glass-border-strong);border-radius:999px;transition:var(--transition);backdrop-filter:var(--blur-sm);}
+.pricing-toggle-slider{position:absolute;inset:0;background:var(--glass-2);border:1px solid var(--glass-border-strong);border-radius:px;transition:var(--transition);backdrop-filter:var(--blur-sm);}
 .pricing-toggle-slider::before{content:'';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:var(--glow-accent);transition:var(--transition);}
 .pricing-toggle input:checked~.pricing-toggle-slider::before{transform:translateY(-50%) translateX(24px);}
 .pricing-toggle input:checked~.pricing-toggle-slider{border-color:var(--glass-border-accent);background:rgba(37,211,102,0.08);}
@@ -2946,7 +2946,7 @@ select option{background:var(--s2);}
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: px;
 }
 .lp-svc-badge.badge-new    { background: rgba(37,211,102,0.15); color: #25d366; border: 1px solid rgba(37,211,102,0.3); }
 .lp-svc-badge.badge-popular { background: rgba(124,92,252,0.15); color: #a78bfa; border: 1px solid rgba(124,92,252,0.3); }
@@ -5157,7 +5157,7 @@ select option{background:var(--s2);}
             <div class="plan-name-v2">Recruiter Monthly</div>
             <div class="plan-price-row">
               <span class="plan-price-currency" id="r-monthly-price-symbol">₹</span>
-              <span class="plan-price-amount" id="r-monthly-price-amount">999</span>
+              <span class="plan-price-amount" id="r-monthly-price-amount">499</span>
               <span class="plan-price-period">/ month</span>
             </div>
             <div class="plan-desc-v2">Full access for agencies and staffing firms</div>
@@ -5210,7 +5210,7 @@ select option{background:var(--s2);}
             <tr>
               <th style="text-align:left">Feature</th>
               <th>Free Trial</th>
-              <th class="col-highlight" id="r-monthly-plan-header">Monthly ₹999</th>
+              <th class="col-highlight" id="r-monthly-plan-header">Monthly ₹499</th>
               <th class="col-purple" id="r-yearly-plan-header">Yearly ₹7,999</th>
             </tr>
           </thead>
@@ -5224,7 +5224,7 @@ select option{background:var(--s2);}
             <tr><td>Priority support</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td><td><span class="cmp-yes">✓</span></td></tr>
             <tr><td>Dedicated account support</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
             <tr><td>Early feature access</td><td><span class="cmp-no">✗</span></td><td><span class="cmp-no">✗</span></td><td><span class="cmp-yes">✓</span></td></tr>
-            <tr><td>Cost</td><td><span class="cmp-val">Free</span></td><td>₹999/mo</td><td><span class="cmp-val">₹667/mo</span></td></tr>
+            <tr><td>Cost</td><td><span class="cmp-val">Free</span></td><td>₹499/mo</td><td><span class="cmp-val">₹667/mo</span></td></tr>
           </tbody>
         </table>
 
@@ -5240,7 +5240,7 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div class="testimonial-card">
-              <div class="testimonial-quote">ROI is incredible. 10 candidates, workflow automation, date-wise reports. ₹999/month is nothing for the value we get.</div>
+              <div class="testimonial-quote">ROI is incredible. 10 candidates, workflow automation, date-wise reports. ₹499/month is nothing for the value we get.</div>
               <div class="testimonial-meta">
                 <div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--blue),#3b82f6)">MR</div>
                 <div><div class="testimonial-name">Mohan Rao</div><div class="testimonial-role">Staffing Agency, Hyderabad</div><div class="testimonial-stars">★★★★★</div></div>
