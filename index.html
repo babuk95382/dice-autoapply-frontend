@@ -7577,6 +7577,9 @@ async function _tryRefreshToken() {
       headers: { 'X-CSRF-Token': getCsrfToken() }
     });
     const ok = r.ok;
+    // IMPORTANT: After token rotation the server issues a new CSRF token.
+    // Re-sync it so subsequent requests don't get CSRF-rejected.
+    if (ok) await _initCsrfToken();
     _refreshQueue.forEach(resolve => resolve(ok));
     _refreshQueue = [];
     return ok;
@@ -8220,9 +8223,20 @@ function _applyCandidateSubscription(sub) {
   }
 }
 
-function candidateLogout() {
-  // Clear server session cookie so the browser reopen does not auto-restore this role
-  try { fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() } }); } catch(e) {}
+async function candidateLogout() {
+  // Await the server call so the session is truly revoked and cookies are
+  // cleared before we wipe local state. Fire-and-forget was the root cause
+  // of "re-login on browser reopen" — the cookies persisted because the
+  // browser never received the Set-Cookie: max-age=0 response.
+  try {
+    await fetch(API_BASE + '/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }
+    });
+  } catch(e) {}
+  // Reset CSRF so future unauthenticated requests start clean
+  _csrfToken = '';
   authState.candidate = { loggedIn: false, user: null, plan: null };
   selfTags = [];
   _selfDicePassword = '';
@@ -8467,9 +8481,15 @@ async function activateRecruiterPlan(plan) {
   }
 }
 
-function recruiterLogout() {
-  // Clear server session cookie so the browser reopen does not auto-restore this role
-  try { fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() } }); } catch(e) {}
+async function recruiterLogout() {
+  try {
+    await fetch(API_BASE + '/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }
+    });
+  } catch(e) {}
+  _csrfToken = '';
   authState.recruiter = { loggedIn: false, user: null };
   rcCandidates = [];
   candidates   = [];
@@ -8530,9 +8550,15 @@ async function adminLogin() {
   }
 }
 
-function adminLogout() {
-  // Clear server session cookie so the browser reopen does not auto-restore this role
-  try { fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() } }); } catch(e) {}
+async function adminLogout() {
+  try {
+    await fetch(API_BASE + '/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }
+    });
+  } catch(e) {}
+  _csrfToken = '';
   authState.admin.loggedIn = false;
   document.getElementById('a-auth-login').style.display = '';
   document.getElementById('a-dashboard').style.display  = 'none';
@@ -11722,44 +11748,38 @@ window.addEventListener('DOMContentLoaded', () => {
   const patchLogouts = () => {
     if (typeof candidateLogout === 'function' && !candidateLogout._lpPatched) {
       const orig = candidateLogout;
-      window.candidateLogout = function() {
-        orig.apply(this, arguments);
+      window.candidateLogout = async function() {
+        await orig.apply(this, arguments);
         // Only show landing if no other role is logged in
-        setTimeout(() => {
-          const anyLoggedIn = (
-            (typeof authState !== 'undefined') &&
-            (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
-          );
-          if (!anyLoggedIn) showLanding();
-        }, 100);
+        const anyLoggedIn = (
+          (typeof authState !== 'undefined') &&
+          (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
+        );
+        if (!anyLoggedIn) showLanding();
       };
       window.candidateLogout._lpPatched = true;
     }
     if (typeof recruiterLogout === 'function' && !recruiterLogout._lpPatched) {
       const orig = recruiterLogout;
-      window.recruiterLogout = function() {
-        orig.apply(this, arguments);
-        setTimeout(() => {
-          const anyLoggedIn = (
-            (typeof authState !== 'undefined') &&
-            (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
-          );
-          if (!anyLoggedIn) showLanding();
-        }, 100);
+      window.recruiterLogout = async function() {
+        await orig.apply(this, arguments);
+        const anyLoggedIn = (
+          (typeof authState !== 'undefined') &&
+          (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
+        );
+        if (!anyLoggedIn) showLanding();
       };
       window.recruiterLogout._lpPatched = true;
     }
     if (typeof adminLogout === 'function' && !adminLogout._lpPatched) {
       const orig = adminLogout;
-      window.adminLogout = function() {
-        orig.apply(this, arguments);
-        setTimeout(() => {
-          const anyLoggedIn = (
-            (typeof authState !== 'undefined') &&
-            (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
-          );
-          if (!anyLoggedIn) showLanding();
-        }, 100);
+      window.adminLogout = async function() {
+        await orig.apply(this, arguments);
+        const anyLoggedIn = (
+          (typeof authState !== 'undefined') &&
+          (authState.candidate?.loggedIn || authState.recruiter?.loggedIn || authState.admin?.loggedIn)
+        );
+        if (!anyLoggedIn) showLanding();
       };
       window.adminLogout._lpPatched = true;
     }
@@ -12102,18 +12122,18 @@ async function saveResume() {
       <div class="contact-info-card">
         <span class="c-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M2 3h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6l-4 3V4a1 1 0 0 1 1-1z"/></svg></span>
         <span class="c-label">WhatsApp / Phone</span>
-        <span class="c-value"><a href="https://wa.me/918328061334" target="_blank">+918328061334</a></span>
+        <span class="c-value"><a href="https://wa.me/918328061334" target="_blank">+91 8328061334</a></span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l2.5 2.5"/></svg></span>
         <span class="c-label">Support Hours</span>
-        <span class="c-value">Mon–Sat, 9 AM – 7 PM IST</span>
+        <span class="c-value">Mon–Sat, 9 AM – 7 PM EST</span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M9 1a5 5 0 0 1 5 5c0 3.5-5 11-5 11S4 9.5 4 6a5 5 0 0 1 5-5z"/><circle cx="9" cy="6" r="1.5"/></svg></span>
         <span class="c-label">Location</span>
         <span class="c-value">Futurehire Technologies<br>
-            · Remote - Team</span>
+             · Remote - Team</span>
       </div>
     </div>
     <div class="contact-map-placeholder">
