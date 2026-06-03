@@ -11533,7 +11533,7 @@ const _otpState = {
   r_fp:  { verified: false, email: '', timerHandle: null, otp: '' },
 };
 
-function _startOtpTimer(ctx, timerElId, resendBtnId, durationSec = 120) {
+function _startOtpTimer(ctx, timerElId, resendBtnId, durationSec = 600) {
   const state = _otpState[ctx];
   if (state.timerHandle) clearInterval(state.timerHandle);
   let remaining = durationSec;
@@ -11566,9 +11566,9 @@ async function cSuSendOtp(isResend = false) {
     const data = await safeJson(res);
     if (!res.ok) {
       const errText = data.error || 'Failed to send OTP';
-      const isEmailConfig = errText.toLowerCase().includes('email') || errText.toLowerCase().includes('smtp') || errText.toLowerCase().includes('configured') || errText.toLowerCase().includes('service');
-      showMsg(msg, isEmailConfig
-        ? '❌ Email service not configured on the server. Please set up your SMTP/email settings in the backend .env file (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS).'
+      const isSmtpErr = errText.toLowerCase().includes('smtp') || errText.toLowerCase().includes('email service') || (errText.toLowerCase().includes('configured') && errText.toLowerCase().includes('server'));
+      showMsg(msg, isSmtpErr
+        ? '❌ Email service not configured on the server. Please set up SMTP settings in the backend .env file.'
         : '❌ ' + errText, 'err');
       sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
       return;
@@ -11664,14 +11664,28 @@ async function cFpSendOtp(isResend = false) {
 
 async function cFpVerifyOtp() {
   const otp     = document.getElementById('c-fp-otp').value.trim();
+  const email   = _otpState.c_fp.email;
   const msg     = document.getElementById('c-forgot-msg');
   const verBtn  = document.getElementById('c-fp-verify-btn');
   if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
-  _otpState.c_fp.otp      = otp;
-  _otpState.c_fp.verified = true;
-  document.getElementById('c-fp-pw-fields').style.display = '';
-  verBtn.disabled = true; verBtn.textContent = '✓';
-  showMsg(msg, '', '');
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify-otp', { email, otp, role: 'candidate' });
+    const data = await safeJson(res);
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Invalid OTP'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.c_fp.otp      = otp;
+    _otpState.c_fp.verified = true;
+    document.getElementById('c-fp-pw-fields').style.display = '';
+    verBtn.textContent = '✓ Verified';
+    showMsg(msg, '✅ OTP verified! Set your new password.', 'ok');
+  } catch (e) {
+    showMsg(msg, 'Network error. Please try again.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
 }
 
 async function cFpResetPassword() {
@@ -11706,9 +11720,9 @@ async function rSuSendOtp(isResend = false) {
     const data = await safeJson(res);
     if (!res.ok) {
       const errText = data.error || 'Failed to send OTP';
-      const isEmailConfig = errText.toLowerCase().includes('email') || errText.toLowerCase().includes('smtp') || errText.toLowerCase().includes('configured') || errText.toLowerCase().includes('service');
-      showMsg(msg, isEmailConfig
-        ? '❌ Email service not configured on the server. Please set up SMTP settings in your backend .env (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS).'
+      const isSmtpErr = errText.toLowerCase().includes('smtp') || errText.toLowerCase().includes('email service') || (errText.toLowerCase().includes('configured') && errText.toLowerCase().includes('server'));
+      showMsg(msg, isSmtpErr
+        ? '❌ Email service not configured on the server. Please set up SMTP settings in the backend .env file.'
         : '❌ ' + errText, 'err');
       sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
       return;
@@ -11805,14 +11819,28 @@ async function rFpSendOtp(isResend = false) {
 
 async function rFpVerifyOtp() {
   const otp     = document.getElementById('r-fp-otp').value.trim();
+  const email   = _otpState.r_fp.email;
   const msg     = document.getElementById('r-forgot-msg');
   const verBtn  = document.getElementById('r-fp-verify-btn');
   if (!otp || otp.length < 6) { showMsg(msg, 'Enter the 6-digit OTP.', 'err'); return; }
-  _otpState.r_fp.otp      = otp;
-  _otpState.r_fp.verified = true;
-  document.getElementById('r-fp-pw-fields').style.display = '';
-  verBtn.disabled = true; verBtn.textContent = '✓';
-  showMsg(msg, '', '');
+  verBtn.disabled = true; verBtn.textContent = 'Verifying…';
+  try {
+    const res  = await apiPost('/api/auth/forgot-password/verify-otp', { email, otp, role: 'recruiter' });
+    const data = await safeJson(res);
+    if (!res.ok) {
+      showMsg(msg, '❌ ' + (data.error || 'Invalid OTP'), 'err');
+      verBtn.disabled = false; verBtn.textContent = 'Verify';
+      return;
+    }
+    _otpState.r_fp.otp      = otp;
+    _otpState.r_fp.verified = true;
+    document.getElementById('r-fp-pw-fields').style.display = '';
+    verBtn.textContent = '✓ Verified';
+    showMsg(msg, '✅ OTP verified! Set your new password.', 'ok');
+  } catch (e) {
+    showMsg(msg, 'Network error. Please try again.', 'err');
+    verBtn.disabled = false; verBtn.textContent = 'Verify';
+  }
 }
 
 async function rFpResetPassword() {
@@ -12221,7 +12249,7 @@ async function saveResume() {
       <div class="contact-info-card">
         <span class="c-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l2.5 2.5"/></svg></span>
         <span class="c-label">Support Hours</span>
-        <span class="c-value">Mon–Sat, 9 AM – 7 PM IST</span>
+        <span class="c-value">Mon–Sat, 9 AM – 7 PM EST</span>
       </div>
       <div class="contact-info-card">
         <span class="c-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M9 1a5 5 0 0 1 5 5c0 3.5-5 11-5 11S4 9.5 4 6a5 5 0 0 1 5-5z"/><circle cx="9" cy="6" r="1.5"/></svg></span>
