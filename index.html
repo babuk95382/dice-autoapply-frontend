@@ -5763,7 +5763,7 @@ select option{background:var(--s2);}
           <div class="card">
             <div class="grid-2">
               <div class="field">
-                <label>Account Email</label>
+                <label>Dice Email</label>
                 <input id="s-email" type="email" placeholder="you@email.com" autocomplete="username">
                 <div id="c-locked-email-info" class="locked-email-badge" style="display:none">
                   <span class="lock-icon"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><rect x="2" y="6" width="10" height="7" rx="1"/><path d="M4 6V4.5a3 3 0 0 1 6 0V6"/></svg></span>
@@ -5771,7 +5771,7 @@ select option{background:var(--s2);}
                 </div>
               </div>
               <div class="field">
-                <label>Password</label>
+                <label>Dice Password</label>
                 <div class="pw-wrap">
                   <input id="s-pass" type="password" placeholder="••••••••" autocomplete="current-password">
                   <button type="button" class="pw-toggle" onclick="togglePw('s-pass',this)" title="Show/hide password"><svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4.5C5.5 4.5 2 10 2 10s3.5 5.5 8 5.5 8-5.5 8-5.5-3.5-5.5-8-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -8013,8 +8013,9 @@ function showAutocomplete(inputId, listId, existingTags) {
   if (matches.length === 0) { list.style.display = 'none'; return; }
   acActiveIndex = -1;
   const escaped = inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const addFnName = inputId === 's-tag-inp' ? 'addSelfTag' : (inputId === 'rc-modal-tag-inp' ? '_rcAddTag' : null);
   list.innerHTML = matches.map(m =>
-    `<div class="autocomplete-item" role="option" data-val="${escHtml(m)}" onmousedown="selectAutocomplete('${inputId}','${listId}','${m.replace(/'/g,"\\'")}')">
+    `<div class="autocomplete-item" role="option" data-val="${escHtml(m)}" onmousedown="selectAutocomplete('${inputId}','${listId}','${m.replace(/'/g,"\\'")}');${addFnName ? addFnName + '()' : ''}">
       ${m.replace(new RegExp(escaped, 'gi'), match => `<strong>${match}</strong>`)}
     </div>`
   ).join('');
@@ -8218,7 +8219,14 @@ async function candidateVerifyOtp() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
-    showCandidateView('subscription');
+    // Trial is activated automatically at signup — go straight to dashboard
+    if (data.user.subscription && data.user.subscription.days_left > 0) {
+      _applyCandidateSubscription(data.user.subscription);
+      showCandidateView('dashboard');
+      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+    } else {
+      showCandidateView('subscription');
+    }
   } catch(e) {
     showMsg(msg, _netErrMsg, 'err');
   } finally {
@@ -8454,7 +8462,14 @@ async function recruiterVerifyOtp() {
     renderSidebar('recruiter');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('recruiter');
-    showRecruiterView('subscription');
+    // Trial is activated automatically at signup — go straight to dashboard
+    if (data.user.subscription && data.user.subscription.days_left > 0) {
+      _applyRecruiterSubscription(data.user.subscription);
+      showRecruiterView('dashboard');
+      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+    } else {
+      showRecruiterView('subscription');
+    }
   } catch(e) {
     showMsg(msg, _netErrMsg, 'err');
   } finally {
@@ -11631,7 +11646,14 @@ async function cSuSubmitSignup() {
     renderSidebar('candidate');
     sidebarUpdateProfile(data.user.name || data.user.email);
     lockToRole('candidate');
-    showCandidateView('subscription');
+    // Trial is activated automatically at signup — go straight to dashboard
+    if (data.user.subscription && data.user.subscription.days_left > 0) {
+      _applyCandidateSubscription(data.user.subscription);
+      showCandidateView('dashboard');
+      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+    } else {
+      showCandidateView('subscription');
+    }
   } catch (e) {
     showMsg(msg, _netErrMsg, 'err');
   } finally {
