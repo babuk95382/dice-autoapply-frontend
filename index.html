@@ -282,7 +282,7 @@ body::before {
   backdrop-filter:var(--blur-sm);
   -webkit-backdrop-filter:var(--blur-sm);
   position:relative;
-  overflow:hidden;
+  overflow:visible;
 }
 .card::before {
   content:'';position:absolute;inset:0;
@@ -909,7 +909,7 @@ select option{background:var(--s2);}
 /* ── Autocomplete ── */
 .autocomplete-wrap{position:relative;}
 .autocomplete-list{
-  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:9999;
   background:var(--glass-1);border:1px solid var(--glass-border-strong);
   border-radius:var(--r);overflow:hidden;
   box-shadow:var(--shadow-glass),0 20px 60px rgba(0,0,0,0.4);
