@@ -9974,8 +9974,9 @@ async function startJob(jobMode) {
       employment:  document.getElementById('s-etype').value,
     };
 
-    // ── SAVE only when in edit mode OR no details saved yet (first-time setup) ──
-    const _needsSave = _candidateEditMode || !_selfDicePassword;
+    // ── SAVE when in edit mode, first-time setup, OR user typed a new password ──
+    const _typedNewPassword = !!document.getElementById('s-pass').value.trim();
+    const _needsSave = _candidateEditMode || !_selfDicePassword || _typedNewPassword;
     if (authState.candidate.user?.id && _needsSave) {
       try {
         const savePayload = {
@@ -12065,11 +12066,14 @@ async function _loadCollaberaDetails() {
       const ph= document.getElementById('col-phone'); if (ph) ph.value = p.phone    || '';
       // Load job titles — stored as JSON array or legacy plain string
       const raw = p.preferred_job_title || '';
+      const _cleanTitles = arr => arr.map(s => s.trim().replace(/^\[|\]$/g, '').trim()).filter(Boolean);
       try {
         const parsed = JSON.parse(raw);
-        colJobTitles = Array.isArray(parsed) ? parsed : (raw ? [raw] : []);
+        colJobTitles = _cleanTitles(Array.isArray(parsed) ? parsed : (raw ? [raw] : []));
       } catch(_) {
-        colJobTitles = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+        // Legacy: may be "[title1,title2]" or "title1,title2"
+        const stripped = raw.replace(/^\[|\]$/g, '').trim();
+        colJobTitles = _cleanTitles(stripped ? stripped.split(',') : []);
       }
       renderColJobTitles();
       _collaberaConfigured = !!(p.first_name && p.email);
@@ -12091,11 +12095,14 @@ async function _loadInspyrDetails() {
       const ph= document.getElementById('ins-phone'); if (ph) ph.value = p.phone    || '';
       // Load job titles — stored as JSON array or legacy plain string
       const raw = p.preferred_job_title || '';
+      const _cleanTitles = arr => arr.map(s => s.trim().replace(/^\[|\]$/g, '').trim()).filter(Boolean);
       try {
         const parsed = JSON.parse(raw);
-        insJobTitles = Array.isArray(parsed) ? parsed : (raw ? [raw] : []);
+        insJobTitles = _cleanTitles(Array.isArray(parsed) ? parsed : (raw ? [raw] : []));
       } catch(_) {
-        insJobTitles = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+        // Legacy: may be "[title1,title2]" or "title1,title2"
+        const stripped = raw.replace(/^\[|\]$/g, '').trim();
+        insJobTitles = _cleanTitles(stripped ? stripped.split(',') : []);
       }
       renderInsJobTitles();
       _inspyrConfigured = !!(p.first_name && p.email);
