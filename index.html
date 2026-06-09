@@ -5890,8 +5890,13 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div class="field" style="margin-top:14px">
-              <label>Preferred Job Title <span style="color:var(--red)">*</span></label>
-              <input id="col-jobtitle" type="text" placeholder="e.g. Java Developer, Data Engineer">
+              <label>Preferred Job Titles <span style="color:var(--red)">*</span></label>
+              <div class="tags-wrap" id="col-job-tags" style="min-height:32px;margin-bottom:8px;"></div>
+              <div class="tag-row">
+                <input id="col-jobtitle" type="text" placeholder='e.g. "Java Developer" — press Enter or click Add' autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addColJobTitle();}">
+                <button class="btn-add" onclick="addColJobTitle()" style="margin-left:8px;white-space:nowrap">+ Add</button>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:5px;">Add one title at a time. Each will be searched separately.</div>
             </div>
             <div id="col-msg" class="msg" style="display:none;margin-top:12px"></div>
             <button class="btn-run" id="col-save-btn" onclick="saveCollaberaDetails()" style="margin-top:18px;width:auto;padding:11px 28px">
@@ -5982,8 +5987,13 @@ select option{background:var(--s2);}
               </div>
             </div>
             <div class="field" style="margin-top:14px">
-              <label>Preferred Job Title <span style="color:var(--red)">*</span></label>
-              <input id="ins-jobtitle" type="text" placeholder="e.g. Java Developer, Data Engineer">
+              <label>Preferred Job Titles <span style="color:var(--red)">*</span></label>
+              <div class="tags-wrap" id="ins-job-tags" style="min-height:32px;margin-bottom:8px;"></div>
+              <div class="tag-row">
+                <input id="ins-jobtitle" type="text" placeholder='e.g. "Data Engineer" — press Enter or click Add' autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addInsJobTitle();}">
+                <button class="btn-add" onclick="addInsJobTitle()" style="margin-left:8px;white-space:nowrap">+ Add</button>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:5px;">Add one title at a time. Each will be searched separately.</div>
             </div>
             <div id="ins-msg" class="msg" style="display:none;margin-top:12px"></div>
             <button class="btn-run" id="ins-save-btn" onclick="saveInspyrDetails()" style="margin-top:18px;width:auto;padding:11px 28px">
@@ -8322,6 +8332,10 @@ async function candidateLogout() {
   _csrfToken = '';
   authState.candidate = { loggedIn: false, user: null, plan: null };
   selfTags = [];
+  colJobTitles = [];
+  insJobTitles = [];
+  renderColJobTitles();
+  renderInsJobTitles();
   _selfDicePassword = '';
   currentJobId = null;
   if (evtSource) { evtSource.close(); evtSource = null; }
@@ -8772,6 +8786,44 @@ function removeSelfTag(i) { selfTags.splice(i, 1); renderSelfTags(); }
 function renderSelfTags() {
   document.getElementById('s-tags').innerHTML = selfTags.map((t, i) =>
     `<span class="tag">${escHtml(t)}<button class="tag-x" onclick="removeSelfTag(${i})" aria-label="Remove ${escHtml(t)}">×</button></span>`
+  ).join('');
+}
+
+// ── Collabera multi-job-title tags ──
+let colJobTitles = [];
+function addColJobTitle() {
+  const inp = document.getElementById('col-jobtitle');
+  const v = inp.value.trim();
+  if (!v || colJobTitles.includes(v)) { inp.value = ''; return; }
+  colJobTitles.push(v);
+  inp.value = '';
+  renderColJobTitles();
+}
+function removeColJobTitle(i) { colJobTitles.splice(i, 1); renderColJobTitles(); }
+function renderColJobTitles() {
+  const wrap = document.getElementById('col-job-tags');
+  if (!wrap) return;
+  wrap.innerHTML = colJobTitles.map((t, i) =>
+    `<span class="tag">${escHtml(t)}<button class="tag-x" onclick="removeColJobTitle(${i})" aria-label="Remove ${escHtml(t)}">×</button></span>`
+  ).join('');
+}
+
+// ── Inspyr Solutions multi-job-title tags ──
+let insJobTitles = [];
+function addInsJobTitle() {
+  const inp = document.getElementById('ins-jobtitle');
+  const v = inp.value.trim();
+  if (!v || insJobTitles.includes(v)) { inp.value = ''; return; }
+  insJobTitles.push(v);
+  inp.value = '';
+  renderInsJobTitles();
+}
+function removeInsJobTitle(i) { insJobTitles.splice(i, 1); renderInsJobTitles(); }
+function renderInsJobTitles() {
+  const wrap = document.getElementById('ins-job-tags');
+  if (!wrap) return;
+  wrap.innerHTML = insJobTitles.map((t, i) =>
+    `<span class="tag">${escHtml(t)}<button class="tag-x" onclick="removeInsJobTitle(${i})" aria-label="Remove ${escHtml(t)}">×</button></span>`
   ).join('');
 }
 
@@ -12011,7 +12063,15 @@ async function _loadCollaberaDetails() {
       const l = document.getElementById('col-lname'); if (l) l.value = p.last_name  || '';
       const e = document.getElementById('col-email'); if (e) e.value = p.email      || '';
       const ph= document.getElementById('col-phone'); if (ph) ph.value = p.phone    || '';
-      const j = document.getElementById('col-jobtitle'); if (j) j.value = p.preferred_job_title || '';
+      // Load job titles — stored as JSON array or legacy plain string
+      const raw = p.preferred_job_title || '';
+      try {
+        const parsed = JSON.parse(raw);
+        colJobTitles = Array.isArray(parsed) ? parsed : (raw ? [raw] : []);
+      } catch(_) {
+        colJobTitles = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      }
+      renderColJobTitles();
       _collaberaConfigured = !!(p.first_name && p.email);
     }
   } catch(e) { /* silently ignore — show empty form */ }
@@ -12029,7 +12089,15 @@ async function _loadInspyrDetails() {
       const l = document.getElementById('ins-lname'); if (l) l.value = p.last_name  || '';
       const e = document.getElementById('ins-email'); if (e) e.value = p.email      || '';
       const ph= document.getElementById('ins-phone'); if (ph) ph.value = p.phone    || '';
-      const j = document.getElementById('ins-jobtitle'); if (j) j.value = p.preferred_job_title || '';
+      // Load job titles — stored as JSON array or legacy plain string
+      const raw = p.preferred_job_title || '';
+      try {
+        const parsed = JSON.parse(raw);
+        insJobTitles = Array.isArray(parsed) ? parsed : (raw ? [raw] : []);
+      } catch(_) {
+        insJobTitles = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      }
+      renderInsJobTitles();
       _inspyrConfigured = !!(p.first_name && p.email);
     }
   } catch(e) { /* silently ignore — show empty form */ }
@@ -12100,11 +12168,14 @@ async function saveCollaberaDetails() {
   const lname    = document.getElementById('col-lname').value.trim();
   const email    = document.getElementById('col-email').value.trim();
   const phone    = document.getElementById('col-phone').value.trim();
-  const jobtitle = document.getElementById('col-jobtitle').value.trim();
   const msg      = document.getElementById('col-msg');
 
-  if (!fname || !lname || !email || !phone || !jobtitle) {
-    showMsg(msg, 'Please fill all required fields.', 'err');
+  // Also push any pending input in the tag field before saving
+  const tagInp = document.getElementById('col-jobtitle');
+  if (tagInp && tagInp.value.trim()) addColJobTitle();
+
+  if (!fname || !lname || !email || !phone || colJobTitles.length === 0) {
+    showMsg(msg, 'Please fill all required fields and add at least one job title.', 'err');
     return;
   }
 
@@ -12113,7 +12184,7 @@ async function saveCollaberaDetails() {
     const user = authState.candidate.user;
     const res  = await apiPost('/api/collabera/save', {
       user_id: user?.id, first_name: fname, last_name: lname,
-      email, phone, preferred_job_title: jobtitle
+      email, phone, preferred_job_title: JSON.stringify(colJobTitles)
     });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Save failed'), 'err'); return; }
@@ -12141,11 +12212,14 @@ async function saveInspyrDetails() {
   const lname    = document.getElementById('ins-lname').value.trim();
   const email    = document.getElementById('ins-email').value.trim();
   const phone    = document.getElementById('ins-phone').value.trim();
-  const jobtitle = document.getElementById('ins-jobtitle').value.trim();
   const msg      = document.getElementById('ins-msg');
 
-  if (!fname || !lname || !email || !phone || !jobtitle) {
-    showMsg(msg, 'Please fill all required fields.', 'err');
+  // Also push any pending input in the tag field before saving
+  const tagInp = document.getElementById('ins-jobtitle');
+  if (tagInp && tagInp.value.trim()) addInsJobTitle();
+
+  if (!fname || !lname || !email || !phone || insJobTitles.length === 0) {
+    showMsg(msg, 'Please fill all required fields and add at least one job title.', 'err');
     return;
   }
 
@@ -12154,7 +12228,7 @@ async function saveInspyrDetails() {
     const user = authState.candidate.user;
     const res  = await apiPost('/api/inspyr/save', {
       user_id: user?.id, first_name: fname, last_name: lname,
-      email, phone, preferred_job_title: jobtitle
+      email, phone, preferred_job_title: JSON.stringify(insJobTitles)
     });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Save failed'), 'err'); return; }
