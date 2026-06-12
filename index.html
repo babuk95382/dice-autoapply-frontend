@@ -6913,6 +6913,13 @@ select option{background:var(--s2);}
       <!-- Admin Dashboard — page-based navigation -->
       <div id="a-dashboard" style="display:none">
 
+        <!-- ══ Global Refresh Bar (visible on all admin pages) ══ -->
+        <div style="display:flex;justify-content:flex-end;padding:0 0 10px 0">
+          <button id="admin-global-refresh-btn" class="btn-add" onclick="refreshCurrentAdminPage()" style="padding:7px 16px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;line-height:1">↻</span> Refresh
+          </button>
+        </div>
+
         <!-- ══ PAGE: Overview ══ -->
         <div class="admin-page" id="admin-page-overview">
           <div class="dash-header">
@@ -7809,6 +7816,15 @@ async function apiFetch(url, opts = {}, _retry = true) {
       }
     });
     toast('Session expired — please log in again.', 'err', 5000);
+    setTimeout(() => {
+      // Navigate to login section if showSection exists, otherwise reload
+      if (typeof showSection === 'function') {
+        showSection('admin-login');
+      } else {
+        const loginEl = document.getElementById('admin-login') || document.getElementById('login-section');
+        if (loginEl) loginEl.scrollIntoView();
+      }
+    }, 1200);
   }
   return res;
 }
@@ -10396,7 +10412,7 @@ function startAdminDashboardPolling() {
   _adminDashPollTimer = setInterval(async () => {
     if (!authState.admin.loggedIn) return;
     try {
-      const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+      const res = await apiFetch('/api/admin/dashboard');
       if (!res.ok) return;
       const data = await safeJson(res);
       setStatNum('a-active',        data.active_runners ?? 0);
@@ -10722,7 +10738,30 @@ function sidebarCloseDrawerAndMobile() { sbClose(); }
 function sidebarToggleDrawer()         { sbToggle(); }
 function sbClosePanel()                { sbClose(); }
 
+let _currentAdminPage = 'overview';
+
+function refreshCurrentAdminPage() {
+  const btn = document.getElementById('admin-global-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '↻'; btn.style.opacity = '0.5'; }
+  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; btn.style.opacity = '1'; } };
+  const p = _currentAdminPage;
+  try {
+    if (p === 'overview')   { loadAdminDashboard().finally(restore); }
+    else if (p === 'users') { runAdminSearch().finally(restore); }
+    else if (p === 'subs')  { loadAdminDashboard().finally(restore); }
+    else if (p === 'revenue') { loadRevenueData(); restore(); }
+    else if (p === 'runlogs') { loadRunLogs().finally(restore); }
+    else if (p === 'automation') { loadAdminSettings(); restore(); }
+    else if (p === 'payment') { try { loadCashfreeSettings(); } catch(e) {} restore(); }
+    else if (p === 'syslogs') { pollLiveDashboard(); restore(); }
+    else if (p === 'platform') { loadEmailSettings(); restore(); }
+    else if (p === 'security') { checkSupabaseStatus(); restore(); }
+    else restore();
+  } catch(e) { restore(); }
+}
+
 function showAdminPage(pageId, title) {
+  _currentAdminPage = pageId;
   const pages = ['overview','users','subs','revenue','runlogs','automation','payment','syslogs','platform','security'];
   pages.forEach(p => {
     const el = document.getElementById('admin-page-' + p);
@@ -10767,7 +10806,7 @@ async function saveAutomationSettings() {
 
 async function loadAdminSettings() {
   try {
-    const res = await fetch(API_BASE + '/api/admin/settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res = await apiFetch('/api/admin/settings');
     const data = await safeJson(res);
     if (res.ok) {
       document.getElementById('a-cand-batch').value    = data.batch_size   || 10;
@@ -10779,7 +10818,7 @@ async function loadAdminSettings() {
 
 async function loadAdminDashboard() {
   try {
-    const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res = await apiFetch('/api/admin/dashboard');
     if (!res.ok) return;
     const data = await safeJson(res);
     setStatNum('a-active',        data.active_runners ?? 0);
@@ -10850,9 +10889,7 @@ async function loadRunLogs() {
   if (tbody) tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3);">Loading…</td></tr>';
   try {
     const params = new URLSearchParams({ status, source, platform, limit: 300 });
-    const res  = await fetch(`${API_BASE}/api/admin/automation-logs?${params}`, {
-      credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() }
-    });
+    const res  = await apiFetch(`/api/admin/automation-logs?${params}`);
     const data = await safeJson(res);
     if (!res.ok) { if (tbody) tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--red);">Error: ${data.error || 'Load failed'}</td></tr>`; return; }
     _rlAllRows = data.logs || [];
@@ -10970,7 +11007,7 @@ async function adminRerun(userId, userType, platform, btn) {
 // ── Revenue Data ──
 async function loadRevenueData() {
   try {
-    const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res = await apiFetch('/api/admin/dashboard');
     if (!res.ok) return;
     const data = await safeJson(res);
     const users = data.users || [];
@@ -11108,7 +11145,7 @@ function exportAdminReport() { window.open('/api/admin/export/users', '_blank');
 // ── Subscription Override ──
 async function _resolveUserId(email, userType) {
   try {
-    const res = await fetch(`${API_BASE}/api/admin/search?q=${encodeURIComponent(email)}`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res = await apiFetch(`/api/admin/search?q=${encodeURIComponent(email)}`);
     const data = await safeJson(res);
     if (!res.ok || !data.ok) return null;
     const match = (data.results || []).find(u => u.email.toLowerCase() === email.toLowerCase() && u.type.toLowerCase() === userType.toLowerCase());
