@@ -1613,15 +1613,6 @@ select option{background:var(--s2);}
 
 </style>
 <style>/* automation.css */
-.stat-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  gap: 4px;
-}
 /* ══════════════════════════════════════════════════
    SIDEBAR SYSTEM
 ══════════════════════════════════════════════════ */
@@ -5936,6 +5927,80 @@ select option{background:var(--s2);}
 
       </div><!-- /#c-collabera-view -->
 
+      <!-- ════════════════════════════════════════════════════
+           JUDGE GROUP VIEW
+           Reuses Collabera profile details — no separate form.
+      ════════════════════════════════════════════════════ -->
+      <div id="c-judge-view" style="display:none">
+        <!-- Dash header matching existing style -->
+        <div class="dash-header">
+          <div class="dash-title">Judge Group</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="dash-user">
+              <div class="dash-avatar" id="judge-dash-avatar">U</div>
+              <div class="dash-user-info">
+                <div class="name" id="judge-dash-name">User</div>
+                <div class="role">Candidate</div>
+              </div>
+            </div>
+            <button class="logout-btn" onclick="candidateLogout()">Logout</button>
+          </div>
+        </div>
+
+        <!-- Subscription expired state -->
+        <div id="judge-expired-card" class="svc-expired-card" style="display:none;margin-bottom:20px">
+          <div class="svc-expired-icon">🔒</div>
+          <div class="svc-expired-title">No Active Subscription</div>
+          <div class="svc-expired-desc">You don't have an active subscription.<br>Please renew your subscription to access this service.</div>
+          <button class="svc-renew-btn" onclick="showCandidateView('subscription')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Renew Subscription
+          </button>
+        </div>
+
+        <!-- Main Judge Group panel (shown when subscription active) -->
+        <div id="judge-form-wrap">
+          <div class="svc-form-card">
+            <div class="svc-header">
+              <div class="svc-icon">⚖️</div>
+              <div>
+                <div class="svc-title">Judge Group</div>
+                <div class="svc-subtitle">Auto-apply to jobs on judge.com using your saved details</div>
+              </div>
+            </div>
+            <div id="judge-saved-msg" class="auth-msg ok" style="display:none;margin-top:14px;text-align:left">
+              ✅ Your details are already saved. Click "Start Automation" to apply to jobs automatically.
+            </div>
+            <div id="judge-missing-msg" class="auth-msg err" style="display:none;margin-top:14px;text-align:left">
+              Please complete your details on the Collabera page first — Judge Group uses the same saved details.
+              <div style="margin-top:10px">
+                <button class="btn-run" onclick="showCandidateView('collabera')" style="width:auto;padding:9px 22px">Go to Collabera</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Judge Group Automation Control ── -->
+        <div class="svc-form-card" id="judge-automation-card" style="margin-top:20px">
+          <div class="svc-header">
+            <div class="svc-icon">⚡</div>
+            <div>
+              <div class="svc-title">Judge Group Automation</div>
+              <div class="svc-subtitle" id="judge-automation-status-label">Status: checking…</div>
+            </div>
+          </div>
+          <button class="btn-run" id="judge-start-btn" onclick="startJudgeAutomation()" style="margin-top:14px;width:auto;padding:11px 28px">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="3,2 12,7 3,12" fill="currentColor"/></svg>
+            Start Automation
+          </button>
+          <button class="btn-stop" id="judge-stop-btn" onclick="stopJudgeAutomation()" style="margin-top:9px">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+            Stop Automation
+          </button>
+        </div><!-- /judge-automation-card -->
+
+      </div><!-- /#c-judge-view -->
+
       <!-- ═══════════════════════════════════════════════════
            INSPYR SOLUTIONS VIEW
       ════════════════════════════════════════════════════ -->
@@ -6913,13 +6978,6 @@ select option{background:var(--s2);}
       <!-- Admin Dashboard — page-based navigation -->
       <div id="a-dashboard" style="display:none">
 
-        <!-- ══ Global Refresh Bar (visible on all admin pages) ══ -->
-        <div style="display:flex;justify-content:flex-end;padding:0 0 10px 0">
-          <button id="admin-global-refresh-btn" class="btn-add" onclick="refreshCurrentAdminPage()" style="padding:7px 16px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:14px;line-height:1">↻</span> Refresh
-          </button>
-        </div>
-
         <!-- ══ PAGE: Overview ══ -->
         <div class="admin-page" id="admin-page-overview">
           <div class="dash-header">
@@ -7074,91 +7132,6 @@ select option{background:var(--s2);}
 
         </div>
         </div><!-- /admin-page-automation -->
-
-        <!-- ══ PAGE: Automation Run Logs ══ -->
-        <div class="admin-page" id="admin-page-runlogs" style="display:none">
-        <div class="section" style="margin-top:8px">
-          <div class="section-head">
-            <div class="section-bar" style="background:var(--blue)"></div>
-            <span class="section-title">Automation Run Logs</span>
-            <span style="margin-left:auto;font-size:10px;padding:2px 10px;border-radius:999px;background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.2);">Live Data</span>
-          </div>
-
-          <!-- Filters -->
-          <div class="card" style="padding:14px 16px;margin-bottom:10px">
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-              <div class="field" style="margin:0;flex:1;min-width:130px">
-                <label style="font-size:11px;margin-bottom:4px;display:block">Status</label>
-                <select id="rl-filter-status" onchange="loadRunLogs()" style="font-size:12px;padding:6px 10px;width:100%">
-                  <option value="all">All Statuses</option>
-                  <option value="success">✅ Success</option>
-                  <option value="failed">❌ Failed</option>
-                </select>
-              </div>
-              <div class="field" style="margin:0;flex:1;min-width:130px">
-                <label style="font-size:11px;margin-bottom:4px;display:block">Source</label>
-                <select id="rl-filter-source" onchange="loadRunLogs()" style="font-size:12px;padding:6px 10px;width:100%">
-                  <option value="all">All Sources</option>
-                  <option value="scheduler">⏰ Scheduler</option>
-                  <option value="manual">🖱 Manual Run</option>
-                </select>
-              </div>
-              <div class="field" style="margin:0;flex:1;min-width:130px">
-                <label style="font-size:11px;margin-bottom:4px;display:block">Platform</label>
-                <select id="rl-filter-platform" onchange="loadRunLogs()" style="font-size:12px;padding:6px 10px;width:100%">
-                  <option value="all">All Platforms</option>
-                  <option value="dice">🎲 Dice</option>
-                  <option value="collabera">🏢 Collabera</option>
-                  <option value="inspyr">🔍 Inspyr Solutions</option>
-                </select>
-              </div>
-              <div class="field" style="margin:0;flex:1;min-width:130px">
-                <label style="font-size:11px;margin-bottom:4px;display:block">Search Name / Email</label>
-                <input id="rl-search" type="text" placeholder="Type to filter…" oninput="filterRunLogsTable()" style="font-size:12px;padding:6px 10px;width:100%;box-sizing:border-box">
-              </div>
-              <button class="btn-add" onclick="loadRunLogs()" style="padding:8px 16px;font-size:12px;white-space:nowrap;align-self:flex-end">↻ Refresh</button>
-            </div>
-          </div>
-
-          <!-- Summary pills -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px" id="rl-summary-pills">
-            <span class="stat-pill" id="rl-pill-total"  style="background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.2)">Total: —</span>
-            <span class="stat-pill" id="rl-pill-success" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)">✅ Success: —</span>
-            <span class="stat-pill" id="rl-pill-failed"  style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)">❌ Failed: —</span>
-            <span class="stat-pill" id="rl-pill-scheduler" style="background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)">⏰ Scheduler: —</span>
-            <span class="stat-pill" id="rl-pill-manual"  style="background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.2)">🖱 Manual: —</span>
-          </div>
-
-          <!-- Table -->
-          <div class="card" style="padding:0;overflow:hidden">
-            <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12px" id="rl-table">
-              <thead>
-                <tr style="border-bottom:1px solid var(--border);background:rgba(0,0,0,0.15)">
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">#</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">User Name</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">User Email</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Dice/Login Email</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Platform</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Source</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Status</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Applied</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Already</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Failed</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Run Date</th>
-                  <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap">Slot</th>
-                  <th style="padding:10px 12px;text-align:center;font-weight:600;color:var(--text2);white-space:nowrap">Action</th>
-                </tr>
-              </thead>
-              <tbody id="rl-tbody">
-                <tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Loading run logs…</td></tr>
-              </tbody>
-            </table>
-            </div>
-          </div>
-          <div id="rl-msg" style="margin-top:8px;font-size:12px;color:var(--text3);display:none"></div>
-        </div>
-        </div><!-- /admin-page-runlogs -->
 
         <!-- ══ PAGE: Payment Gateway ══ -->
         <div class="admin-page" id="admin-page-payment" style="display:none">
@@ -7816,15 +7789,6 @@ async function apiFetch(url, opts = {}, _retry = true) {
       }
     });
     toast('Session expired — please log in again.', 'err', 5000);
-    setTimeout(() => {
-      // Navigate to login section if showSection exists, otherwise reload
-      if (typeof showSection === 'function') {
-        showSection('admin-login');
-      } else {
-        const loginEl = document.getElementById('admin-login') || document.getElementById('login-section');
-        if (loginEl) loginEl.scrollIntoView();
-      }
-    }, 1200);
   }
   return res;
 }
@@ -8184,14 +8148,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════════════
 function showCandidateView(view) {
   ['c-auth-login','c-auth-signup','c-auth-forgot','c-subscription','c-dashboard-setup','c-live-dashboard',
-   'c-collabera-view','c-inspyr-view','c-resume-upload-view'].forEach(id => {
+   'c-collabera-view','c-inspyr-view','c-judge-view','c-resume-upload-view'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
   const target = {
     login: 'c-auth-login', signup: 'c-auth-signup', forgot: 'c-auth-forgot',
     subscription: 'c-subscription', setup: 'c-dashboard-setup', dashboard: 'c-live-dashboard',
-    collabera: 'c-collabera-view', inspyr: 'c-inspyr-view', resume: 'c-resume-upload-view'
+    collabera: 'c-collabera-view', inspyr: 'c-inspyr-view', judge: 'c-judge-view', resume: 'c-resume-upload-view'
   }[view];
   if (target) {
     const el = document.getElementById(target);
@@ -8216,6 +8180,12 @@ function showCandidateView(view) {
     _checkInspyrSubscription();
     _loadInspyrDetails();
     _initInspyrAutomationUI();      // ADDED
+  }
+  if (view === 'judge') {
+    _syncServiceDashHeader('judge');
+    _checkJudgeSubscription();
+    _loadJudgeDetails();
+    _initJudgeAutomationUI();
   }
   if (view === 'resume') {
     _syncServiceDashHeader('resume');
@@ -10412,7 +10382,7 @@ function startAdminDashboardPolling() {
   _adminDashPollTimer = setInterval(async () => {
     if (!authState.admin.loggedIn) return;
     try {
-      const res = await apiFetch('/api/admin/dashboard');
+      const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
       if (!res.ok) return;
       const data = await safeJson(res);
       setStatNum('a-active',        data.active_runners ?? 0);
@@ -10496,6 +10466,7 @@ const SIDEBAR_MENUS = {
         { id: 'dashboard',  icon: '⊡', label: 'Dice',            action: () => { showCandidateView('setup'); showCandidateSubSections(['c-sub-credentials','c-sub-searchjobs','c-sub-params','c-sub-runbtn']); } },
         { id: 'collabera',  icon: '🤝', label: 'Collabera',       action: () => showCandidateView('collabera') },
         { id: 'inspyr',     icon: '💡', label: 'Inspyr Solutions', action: () => showCandidateView('inspyr') },
+        { id: 'judge',      icon: '⚖️', label: 'Judge Group',     action: () => showCandidateView('judge') },
         { id: 'resume',     icon: '📄', label: 'Resume Upload',   action: () => showCandidateView('resume') },
       ]},
       { label: 'Account', items: [
@@ -10527,7 +10498,6 @@ const SIDEBAR_MENUS = {
         { id: 'revenue',    icon: '△', label: 'Revenue',            action: () => showAdminPage('revenue',    'Revenue Overview') },
       ]},
       { label: 'Control', items: [
-        { id: 'runlogs',    icon: '▤', label: 'Run Logs',           action: () => { showAdminPage('runlogs', 'Automation Run Logs'); loadRunLogs(); } },
         { id: 'automation', icon: '◈', label: 'Automation Control', action: () => showAdminPage('automation', 'Automation Control') },
         { id: 'payment',    icon: '💳', label: 'Payment Gateway',   action: () => showAdminPage('payment',   'Payment Gateway') },
         { id: 'syslogs',    icon: '▣', label: 'System Logs',        action: () => { showAdminPage('syslogs', 'System Logs'); startLiveDashboardPolling(); } },
@@ -10738,31 +10708,8 @@ function sidebarCloseDrawerAndMobile() { sbClose(); }
 function sidebarToggleDrawer()         { sbToggle(); }
 function sbClosePanel()                { sbClose(); }
 
-let _currentAdminPage = 'overview';
-
-function refreshCurrentAdminPage() {
-  const btn = document.getElementById('admin-global-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '↻'; btn.style.opacity = '0.5'; }
-  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; btn.style.opacity = '1'; } };
-  const p = _currentAdminPage;
-  try {
-    if (p === 'overview')   { loadAdminDashboard().finally(restore); }
-    else if (p === 'users') { runAdminSearch().finally(restore); }
-    else if (p === 'subs')  { loadAdminDashboard().finally(restore); }
-    else if (p === 'revenue') { loadRevenueData(); restore(); }
-    else if (p === 'runlogs') { loadRunLogs().finally(restore); }
-    else if (p === 'automation') { loadAdminSettings(); restore(); }
-    else if (p === 'payment') { try { loadCashfreeSettings(); } catch(e) {} restore(); }
-    else if (p === 'syslogs') { pollLiveDashboard(); restore(); }
-    else if (p === 'platform') { loadEmailSettings(); restore(); }
-    else if (p === 'security') { checkSupabaseStatus(); restore(); }
-    else restore();
-  } catch(e) { restore(); }
-}
-
 function showAdminPage(pageId, title) {
-  _currentAdminPage = pageId;
-  const pages = ['overview','users','subs','revenue','runlogs','automation','payment','syslogs','platform','security'];
+  const pages = ['overview','users','subs','revenue','automation','payment','syslogs','platform','security'];
   pages.forEach(p => {
     const el = document.getElementById('admin-page-' + p);
     if (el) el.style.display = (p === pageId) ? '' : 'none';
@@ -10806,7 +10753,7 @@ async function saveAutomationSettings() {
 
 async function loadAdminSettings() {
   try {
-    const res = await apiFetch('/api/admin/settings');
+    const res = await fetch(API_BASE + '/api/admin/settings', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     const data = await safeJson(res);
     if (res.ok) {
       document.getElementById('a-cand-batch').value    = data.batch_size   || 10;
@@ -10818,7 +10765,7 @@ async function loadAdminSettings() {
 
 async function loadAdminDashboard() {
   try {
-    const res = await apiFetch('/api/admin/dashboard');
+    const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     if (!res.ok) return;
     const data = await safeJson(res);
     setStatNum('a-active',        data.active_runners ?? 0);
@@ -10878,136 +10825,10 @@ async function loadAdminDashboard() {
   loadEmailTemplates();
 }
 
-// ── Run Logs ──
-let _rlAllRows = [];
-
-async function loadRunLogs() {
-  const status   = document.getElementById('rl-filter-status')?.value   || 'all';
-  const source   = document.getElementById('rl-filter-source')?.value   || 'all';
-  const platform = document.getElementById('rl-filter-platform')?.value || 'all';
-  const tbody    = document.getElementById('rl-tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3);">Loading…</td></tr>';
-  try {
-    const params = new URLSearchParams({ status, source, platform, limit: 300 });
-    const res  = await apiFetch(`/api/admin/automation-logs?${params}`);
-    const data = await safeJson(res);
-    if (!res.ok) { if (tbody) tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--red);">Error: ${data.error || 'Load failed'}</td></tr>`; return; }
-    _rlAllRows = data.logs || [];
-    _renderRunLogsTable(_rlAllRows);
-    _updateRunLogsPills(_rlAllRows);
-  } catch(e) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--red);">Network error</td></tr>`;
-  }
-}
-
-function _updateRunLogsPills(rows) {
-  const total     = rows.length;
-  const success   = rows.filter(r => r.status === 'success').length;
-  const failed    = rows.filter(r => r.status === 'failed').length;
-  const scheduler = rows.filter(r => r.source === 'scheduler').length;
-  const manual    = rows.filter(r => r.source === 'manual').length;
-  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  set('rl-pill-total',     `Total: ${total}`);
-  set('rl-pill-success',   `✅ Success: ${success}`);
-  set('rl-pill-failed',    `❌ Failed: ${failed}`);
-  set('rl-pill-scheduler', `⏰ Scheduler: ${scheduler}`);
-  set('rl-pill-manual',    `🖱 Manual: ${manual}`);
-}
-
-function filterRunLogsTable() {
-  const q = (document.getElementById('rl-search')?.value || '').toLowerCase();
-  if (!q) { _renderRunLogsTable(_rlAllRows); return; }
-  const filtered = _rlAllRows.filter(r =>
-    (r.user_name  || '').toLowerCase().includes(q) ||
-    (r.user_email || '').toLowerCase().includes(q) ||
-    (r.dice_email || '').toLowerCase().includes(q) ||
-    (r.platform_label || '').toLowerCase().includes(q)
-  );
-  _renderRunLogsTable(filtered);
-}
-
-function _renderRunLogsTable(rows) {
-  const tbody = document.getElementById('rl-tbody');
-  if (!tbody) return;
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3);">No records found.</td></tr>';
-    return;
-  }
-  const fmtDate = iso => {
-    if (!iso) return '—';
-    try { return new Date(iso).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }); } catch { return iso; }
-  };
-  const platformBadge = (p, label) => {
-    const colors = { dice:'#6366f1', collabera:'#06b6d4', inspyr:'#f59e0b', 'collabera+inspyr':'#8b5cf6' };
-    const c = colors[p] || '#6b7280';
-    return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:${c}22;color:${c};border:1px solid ${c}44;white-space:nowrap">${label}</span>`;
-  };
-  const sourceBadge = s => {
-    if (s === 'scheduler') return '<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.25)">⏰ Scheduler</span>';
-    return '<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(59,130,246,0.12);color:var(--blue);border:1px solid rgba(59,130,246,0.25)">🖱 Manual</span>';
-  };
-  const statusBadge = s => {
-    if (s === 'success') return '<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.25)">✅ Success</span>';
-    return '<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25)">❌ Failed</span>';
-  };
-  tbody.innerHTML = rows.map((r, i) => `
-    <tr style="border-bottom:1px solid var(--border);transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
-      <td style="padding:9px 12px;color:var(--text3)">${i+1}</td>
-      <td style="padding:9px 12px;font-weight:500;white-space:nowrap">${r.user_name || '—'}</td>
-      <td style="padding:9px 12px;color:var(--text2);font-size:11px">${r.user_email || '—'}</td>
-      <td style="padding:9px 12px;color:var(--text3);font-size:11px;font-family:monospace">${r.dice_email || '—'}</td>
-      <td style="padding:9px 12px">${platformBadge(r.platform, r.platform_label)}</td>
-      <td style="padding:9px 12px">${sourceBadge(r.source)}</td>
-      <td style="padding:9px 12px">${statusBadge(r.status)}</td>
-      <td style="padding:9px 12px;color:var(--green);font-weight:600;text-align:center">${r.jobs_applied ?? '—'}</td>
-      <td style="padding:9px 12px;color:var(--text3);text-align:center">${r.already_applied ?? '—'}</td>
-      <td style="padding:9px 12px;color:${r.failed_jobs > 0 ? 'var(--red)' : 'var(--text3)'};text-align:center;font-weight:${r.failed_jobs > 0 ? 600 : 400}">${r.failed_jobs ?? '—'}</td>
-      <td style="padding:9px 12px;color:var(--text3);font-size:11px;white-space:nowrap">${fmtDate(r.run_date)}</td>
-      <td style="padding:9px 12px;color:var(--text3);font-size:11px">${r.run_slot || '—'}</td>
-      <td style="padding:9px 12px;text-align:center">
-        <button onclick="adminRerun('${r.user_id}','${r.user_type}','${r.platform}',this)"
-          style="padding:4px 12px;font-size:11px;border-radius:6px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.1);color:var(--amber);cursor:pointer;font-weight:600;transition:all 0.15s;white-space:nowrap"
-          onmouseover="this.style.background='rgba(245,158,11,0.2)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'">
-          ↺ Rerun
-        </button>
-      </td>
-    </tr>`).join('');
-}
-
-async function adminRerun(userId, userType, platform, btn) {
-  if (!confirm(`Trigger a rerun for this user on ${platform}?\n\nThis will start the automation immediately in the background.`)) return;
-  const orig = btn.textContent;
-  btn.textContent = '⏳ Running…';
-  btn.disabled = true;
-  try {
-    const res  = await fetch(`${API_BASE}/api/admin/rerun`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-      body: JSON.stringify({ user_id: userId, user_type: userType, platform })
-    });
-    const data = await safeJson(res);
-    if (res.ok) {
-      btn.textContent = '✅ Triggered';
-      btn.style.color = 'var(--green)';
-      btn.style.borderColor = 'rgba(16,185,129,0.35)';
-      btn.style.background  = 'rgba(16,185,129,0.1)';
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; btn.style.color=''; btn.style.borderColor=''; btn.style.background=''; }, 3000);
-    } else {
-      btn.textContent = '❌ Error';
-      btn.style.color = 'var(--red)';
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; btn.style.color=''; }, 3000);
-      alert('Rerun failed: ' + (data.error || 'Unknown error'));
-    }
-  } catch(e) {
-    btn.textContent = '❌ Error';
-    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3000);
-  }
-}
-
 // ── Revenue Data ──
 async function loadRevenueData() {
   try {
-    const res = await apiFetch('/api/admin/dashboard');
+    const res = await fetch(API_BASE + '/api/admin/dashboard', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     if (!res.ok) return;
     const data = await safeJson(res);
     const users = data.users || [];
@@ -11145,7 +10966,7 @@ function exportAdminReport() { window.open('/api/admin/export/users', '_blank');
 // ── Subscription Override ──
 async function _resolveUserId(email, userType) {
   try {
-    const res = await apiFetch(`/api/admin/search?q=${encodeURIComponent(email)}`);
+    const res = await fetch(`${API_BASE}/api/admin/search?q=${encodeURIComponent(email)}`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     const data = await safeJson(res);
     if (!res.ok || !data.ok) return null;
     const match = (data.results || []).find(u => u.email.toLowerCase() === email.toLowerCase() && u.type.toLowerCase() === userType.toLowerCase());
@@ -12270,6 +12091,7 @@ function _syncServiceDashHeader(svc) {
   const ids = {
     collabera: ['collabera-dash-name','collabera-dash-avatar'],
     inspyr:    ['inspyr-dash-name','inspyr-dash-avatar'],
+    judge:     ['judge-dash-name','judge-dash-avatar'],
     resume:    ['resume-dash-name','resume-dash-avatar'],
   };
   const [nameId, avId] = ids[svc] || [];
@@ -12312,6 +12134,20 @@ function _checkInspyrSubscription() {
   }
 }
 
+function _checkJudgeSubscription() {
+  const expired = document.getElementById('judge-expired-card');
+  const form    = document.getElementById('judge-form-wrap');
+  const sub = authState.candidate.user?.subscription;
+  const isExpired = sub && sub.days_left !== undefined && sub.days_left <= 0 && sub.status === 'expired';
+  if (isExpired) {
+    if (expired) expired.style.display = 'block';
+    if (form)    form.style.display    = 'none';
+  } else {
+    if (expired) expired.style.display = 'none';
+    if (form)    form.style.display    = 'block';
+  }
+}
+
 // ── Load saved Collabera details ──
 async function _loadCollaberaDetails() {
   try {
@@ -12339,6 +12175,32 @@ async function _loadCollaberaDetails() {
       _collaberaConfigured = !!(p.first_name && p.email);
     }
   } catch(e) { /* silently ignore — show empty form */ }
+}
+
+// ── Judge Group: reuses the saved Collabera profile (no separate form) ──
+async function _loadJudgeDetails() {
+  const savedMsg   = document.getElementById('judge-saved-msg');
+  const missingMsg = document.getElementById('judge-missing-msg');
+  try {
+    const res  = await fetch(API_BASE + '/api/collabera/load', { credentials: 'include' });
+    if (!res.ok) throw new Error('load failed');
+    const data = await safeJson(res);
+    const p = data?.profile || {};
+    const raw = p.preferred_job_title || '';
+    let hasTitle = false;
+    try {
+      const parsed = JSON.parse(raw);
+      hasTitle = Array.isArray(parsed) ? parsed.length > 0 : !!raw;
+    } catch(_) {
+      hasTitle = !!raw.replace(/^\[|\]$/g, '').trim();
+    }
+    const complete = !!(p.first_name && p.last_name && p.email && hasTitle);
+    if (savedMsg)   savedMsg.style.display   = complete ? 'block' : 'none';
+    if (missingMsg) missingMsg.style.display = complete ? 'none'  : 'block';
+  } catch(e) {
+    if (savedMsg)   savedMsg.style.display   = 'none';
+    if (missingMsg) missingMsg.style.display = 'block';
+  }
 }
 
 // ── Load saved Inspyr details ──
@@ -12952,6 +12814,97 @@ async function stopCollaberaAutomation() {
 async function _initCollaberaAutomationUI() {
   await _pollCollaberaStatus();
   if (_collaberaAutoRunning) _startCollaberaPolling();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  JUDGE GROUP AUTOMATION — start / stop / status
+//  Reuses the Collabera profile/resume on the backend.
+//  (Added — Dice/Collabera/Inspyr code above is UNTOUCHED)
+// ═══════════════════════════════════════════════════════════════
+
+let _judgeAutoRunning = false;
+let _judgeStatusTimer = null;
+
+function _setJudgeRunning(running) {
+  _judgeAutoRunning = running;
+  const startBtn  = document.getElementById('judge-start-btn');
+  const stopBtn   = document.getElementById('judge-stop-btn');
+  const statusLbl = document.getElementById('judge-automation-status-label');
+  if (startBtn)  startBtn.disabled = running;
+  if (stopBtn)   stopBtn.classList.toggle('visible', running);
+  if (statusLbl) {
+    if (running) {
+      statusLbl.innerHTML = 'Status: <span style="color:var(--green)">🟢 Automation Running ✅</span>';
+    } else {
+      statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+    }
+  }
+}
+
+async function _pollJudgeStatus() {
+  try {
+    const res  = await fetch(API_BASE + '/api/judge/status', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    _setJudgeRunning(!!data.running);
+  } catch(e) {}
+}
+
+function _startJudgePolling() {
+  _stopJudgePolling();
+  _judgeStatusTimer = setInterval(_pollJudgeStatus, 5000);
+}
+
+function _stopJudgePolling() {
+  if (_judgeStatusTimer) { clearInterval(_judgeStatusTimer); _judgeStatusTimer = null; }
+}
+
+async function startJudgeAutomation() {
+  const startBtn  = document.getElementById('judge-start-btn');
+  const statusLbl = document.getElementById('judge-automation-status-label');
+  if (startBtn) startBtn.disabled = true;
+  if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--accent)">⏳ Starting…</span>';
+  try {
+    const res  = await fetch(API_BASE + '/api/judge/start', {
+      method: 'POST', credentials: 'include',
+      headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const data = await safeJson(res);
+    if (!res.ok || !data.success) {
+      if (startBtn) startBtn.disabled = false;
+      if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+      toast('❌ ' + (data.message || 'Failed to start automation.'), 'err', 5000);
+      if (data.redirect === 'subscription') showCandidateView('subscription');
+      else if (data.redirect === 'resume')   showCandidateView('resume');
+      else if (data.redirect === 'collabera') showCandidateView('collabera');
+      return;
+    }
+    _setJudgeRunning(true);
+    _startJudgePolling();
+    toast('✅ Judge Group Automation started.', 'ok');
+  } catch(e) {
+    if (startBtn) startBtn.disabled = false;
+    if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+    toast('❌ Network error — could not start automation.', 'err');
+  }
+}
+
+async function stopJudgeAutomation() {
+  _stopJudgePolling();
+  try {
+    await fetch(API_BASE + '/api/judge/stop', {
+      method: 'POST', credentials: 'include',
+      headers: { 'X-CSRF-Token': getCsrfToken() },
+    });
+  } catch(e) {}
+  _setJudgeRunning(false);
+  toast('Judge Group Automation stopped.', 'info');
+}
+
+async function _initJudgeAutomationUI() {
+  await _pollJudgeStatus();
+  if (_judgeAutoRunning) _startJudgePolling();
 }
 
 // ═══════════════════════════════════════════════════════════════
