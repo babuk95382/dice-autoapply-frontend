@@ -6002,6 +6002,80 @@ select option{background:var(--s2);}
       </div><!-- /#c-judge-view -->
 
       <!-- ═══════════════════════════════════════════════════
+           EXPERIS VIEW
+           Reuses Collabera profile details — no separate form.
+      ════════════════════════════════════════════════════════ -->
+      <div id="c-experis-view" style="display:none">
+        <!-- Dash header -->
+        <div class="dash-header">
+          <div class="dash-title">Experis</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="dash-user">
+              <div class="dash-avatar" id="experis-dash-avatar">U</div>
+              <div class="dash-user-info">
+                <div class="name" id="experis-dash-name">User</div>
+                <div class="role">Candidate</div>
+              </div>
+            </div>
+            <button class="logout-btn" onclick="candidateLogout()">Logout</button>
+          </div>
+        </div>
+
+        <!-- Subscription expired state -->
+        <div id="experis-expired-card" class="svc-expired-card" style="display:none;margin-bottom:20px">
+          <div class="svc-expired-icon">🔒</div>
+          <div class="svc-expired-title">No Active Subscription</div>
+          <div class="svc-expired-desc">You don't have an active subscription.<br>Please renew your subscription to access this service.</div>
+          <button class="svc-renew-btn" onclick="showCandidateView('subscription')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Renew Subscription
+          </button>
+        </div>
+
+        <!-- Main Experis panel (shown when subscription active) -->
+        <div id="experis-form-wrap">
+          <div class="svc-form-card">
+            <div class="svc-header">
+              <div class="svc-icon">🚀</div>
+              <div>
+                <div class="svc-title">Experis</div>
+                <div class="svc-subtitle">Auto-apply to jobs on experis.com using your saved details</div>
+              </div>
+            </div>
+            <div id="experis-saved-msg" class="auth-msg ok" style="display:none;margin-top:14px;text-align:left">
+              ✅ Your details are already saved. Click "Start Automation" to apply to jobs automatically.
+            </div>
+            <div id="experis-missing-msg" class="auth-msg err" style="display:none;margin-top:14px;text-align:left">
+              Please complete your details on the Collabera page first — Experis uses the same saved details.
+              <div style="margin-top:10px">
+                <button class="btn-run" onclick="showCandidateView('collabera')" style="width:auto;padding:9px 22px">Go to Collabera</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Experis Automation Control ── -->
+        <div class="svc-form-card" id="experis-automation-card" style="margin-top:20px">
+          <div class="svc-header">
+            <div class="svc-icon">⚡</div>
+            <div>
+              <div class="svc-title">Experis Automation</div>
+              <div class="svc-subtitle" id="experis-automation-status-label">Status: checking…</div>
+            </div>
+          </div>
+          <button class="btn-run" id="experis-start-btn" onclick="startExperisAutomation()" style="margin-top:14px;width:auto;padding:11px 28px">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="3,2 12,7 3,12" fill="currentColor"/></svg>
+            Start Automation
+          </button>
+          <button class="btn-stop" id="experis-stop-btn" onclick="stopExperisAutomation()" style="margin-top:9px">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+            Stop Automation
+          </button>
+        </div><!-- /experis-automation-card -->
+
+      </div><!-- /#c-experis-view -->
+
+      <!-- ═══════════════════════════════════════════════════
            INSPYR SOLUTIONS VIEW
       ════════════════════════════════════════════════════ -->
       <div id="c-inspyr-view" style="display:none">
@@ -8148,14 +8222,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════════════
 function showCandidateView(view) {
   ['c-auth-login','c-auth-signup','c-auth-forgot','c-subscription','c-dashboard-setup','c-live-dashboard',
-   'c-collabera-view','c-inspyr-view','c-judge-view','c-resume-upload-view'].forEach(id => {
+   'c-collabera-view','c-inspyr-view','c-judge-view','c-experis-view','c-resume-upload-view'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
   const target = {
     login: 'c-auth-login', signup: 'c-auth-signup', forgot: 'c-auth-forgot',
     subscription: 'c-subscription', setup: 'c-dashboard-setup', dashboard: 'c-live-dashboard',
-    collabera: 'c-collabera-view', inspyr: 'c-inspyr-view', judge: 'c-judge-view', resume: 'c-resume-upload-view'
+    collabera: 'c-collabera-view', inspyr: 'c-inspyr-view', judge: 'c-judge-view', experis: 'c-experis-view', resume: 'c-resume-upload-view'
   }[view];
   if (target) {
     const el = document.getElementById(target);
@@ -8186,6 +8260,12 @@ function showCandidateView(view) {
     _checkJudgeSubscription();
     _loadJudgeDetails();
     _initJudgeAutomationUI();
+  }
+  if (view === 'experis') {
+    _syncServiceDashHeader('experis');
+    _checkExperisSubscription();
+    _loadExperisDetails();
+    _initExperisAutomationUI();
   }
   if (view === 'resume') {
     _syncServiceDashHeader('resume');
@@ -10467,6 +10547,9 @@ const SIDEBAR_MENUS = {
         { id: 'collabera',  icon: '🤝', label: 'Collabera',       action: () => showCandidateView('collabera') },
         { id: 'inspyr',     icon: '💡', label: 'Inspyr Solutions', action: () => showCandidateView('inspyr') },
         { id: 'judge',      icon: '⚖️', label: 'Judge Group',     action: () => showCandidateView('judge') },
+        { id: 'experis',    icon: '🚀', label: 'Experis',          action: () => showCandidateView('experis') },
+        { id: 'kforce',     icon: '🔒', label: 'Kforce',           action: () => _showComingSoon('Kforce'), disabled: true },
+        { id: 'roberthalf', icon: '🔒', label: 'Robert Half',      action: () => _showComingSoon('Robert Half'), disabled: true },
         { id: 'resume',     icon: '📄', label: 'Resume Upload',   action: () => showCandidateView('resume') },
       ]},
       { label: 'Account', items: [
@@ -10628,8 +10711,13 @@ function renderSidebar(role) {
     section.items.forEach(item => {
       const badge = item.badge ? `<span class="sb-badge">${escHtml(item.badge)}</span>` : '';
       const svgIcon = _sbIcons[item.id] || `<span style="font-size:13px">${item.icon}</span>`;
-      html += `<div class="sb-item" id="sb-item-${escHtml(item.id)}" data-id="${escHtml(item.id)}" onclick="sidebarNavigate('${escHtml(item.id)}')">`
-            + `<span class="sb-icon">${svgIcon}</span><span class="sb-label">${escHtml(item.label)}</span>${badge}</div>`;
+      if (item.disabled) {
+        html += `<div class="sb-item sb-item-locked" id="sb-item-${escHtml(item.id)}" data-id="${escHtml(item.id)}" onclick="${escHtml("sidebarNavigate('" + item.id + "')")}" title="Coming Soon" style="opacity:0.45;cursor:not-allowed;">`
+              + `<span class="sb-icon">${svgIcon}</span><span class="sb-label">${escHtml(item.label)}</span><span class="sb-badge" style="background:rgba(255,255,255,0.07);color:var(--text2);font-size:9px;padding:2px 6px;border-radius:99px;margin-left:auto">Soon</span></div>`;
+      } else {
+        html += `<div class="sb-item" id="sb-item-${escHtml(item.id)}" data-id="${escHtml(item.id)}" onclick="sidebarNavigate('${escHtml(item.id)}')">`
+              + `<span class="sb-icon">${svgIcon}</span><span class="sb-label">${escHtml(item.label)}</span>${badge}</div>`;
+      }
     });
     html += `<div class="sb-divider"></div>`;
   });
@@ -10685,6 +10773,14 @@ function sidebarNavigate(id) {
 function sidebarSetActive(id, runAction) {
   const config = SIDEBAR_MENUS[_sbActiveRole];
   if (!config) return;
+  // Find the item — check if it is disabled (coming soon)
+  let foundItem = null;
+  config.sections.forEach(s => s.items.forEach(item => { if (item.id === id) foundItem = item; }));
+  if (foundItem && foundItem.disabled) {
+    // Just fire the action (shows coming-soon toast) — do NOT change active highlight
+    if (runAction && typeof foundItem.action === 'function') foundItem.action();
+    return;
+  }
   _sbActiveItem = id;
   document.querySelectorAll('.sb-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
   if (runAction) config.sections.forEach(s => s.items.forEach(item => {
@@ -12092,6 +12188,7 @@ function _syncServiceDashHeader(svc) {
     collabera: ['collabera-dash-name','collabera-dash-avatar'],
     inspyr:    ['inspyr-dash-name','inspyr-dash-avatar'],
     judge:     ['judge-dash-name','judge-dash-avatar'],
+    experis:   ['experis-dash-name','experis-dash-avatar'],
     resume:    ['resume-dash-name','resume-dash-avatar'],
   };
   const [nameId, avId] = ids[svc] || [];
@@ -12995,6 +13092,142 @@ async function stopInspyrAutomation() {
 async function _initInspyrAutomationUI() {
   await _pollInspyrStatus();
   if (_inspyrAutoRunning) _startInspyrPolling();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COMING SOON TOAST — for locked sidebar items (Kforce, Robert Half)
+// ═══════════════════════════════════════════════════════════════
+function _showComingSoon(name) {
+  toast('🔒 ' + name + ' — Coming Soon!', 'info', 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPERIS AUTOMATION — start / stop / status
+//  Reuses the Collabera profile/resume on the backend.
+// ═══════════════════════════════════════════════════════════════
+
+let _experisAutoRunning = false;
+let _experisStatusTimer = null;
+
+function _checkExperisSubscription() {
+  const expired = document.getElementById('experis-expired-card');
+  const form    = document.getElementById('experis-form-wrap');
+  const sub = authState.candidate.user?.subscription;
+  const isExpired = sub && sub.days_left !== undefined && sub.days_left <= 0 && sub.status === 'expired';
+  if (isExpired) {
+    if (expired) expired.style.display = 'block';
+    if (form)    form.style.display    = 'none';
+  } else {
+    if (expired) expired.style.display = 'none';
+    if (form)    form.style.display    = 'block';
+  }
+}
+
+async function _loadExperisDetails() {
+  const savedMsg   = document.getElementById('experis-saved-msg');
+  const missingMsg = document.getElementById('experis-missing-msg');
+  try {
+    const res  = await fetch(API_BASE + '/api/collabera/load', { credentials: 'include' });
+    if (!res.ok) throw new Error('load failed');
+    const data = await safeJson(res);
+    const p = data?.profile || {};
+    const raw = p.preferred_job_title || '';
+    let hasTitle = false;
+    try {
+      const parsed = JSON.parse(raw);
+      hasTitle = Array.isArray(parsed) ? parsed.length > 0 : !!raw;
+    } catch(_) {
+      hasTitle = !!raw.replace(/^\[|\]$/g, '').trim();
+    }
+    const complete = !!(p.first_name && p.last_name && p.email && hasTitle);
+    if (savedMsg)   savedMsg.style.display   = complete ? 'block' : 'none';
+    if (missingMsg) missingMsg.style.display = complete ? 'none'  : 'block';
+  } catch(e) {
+    if (savedMsg)   savedMsg.style.display   = 'none';
+    if (missingMsg) missingMsg.style.display = 'block';
+  }
+}
+
+function _setExperisRunning(running) {
+  _experisAutoRunning = running;
+  const startBtn  = document.getElementById('experis-start-btn');
+  const stopBtn   = document.getElementById('experis-stop-btn');
+  const statusLbl = document.getElementById('experis-automation-status-label');
+  if (startBtn)  startBtn.disabled = running;
+  if (stopBtn)   stopBtn.classList.toggle('visible', running);
+  if (statusLbl) {
+    if (running) {
+      statusLbl.innerHTML = 'Status: <span style="color:var(--green)">🟢 Automation Running ✅</span>';
+    } else {
+      statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+    }
+  }
+}
+
+async function _pollExperisStatus() {
+  try {
+    const res  = await fetch(API_BASE + '/api/experis/status', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    _setExperisRunning(!!data.running);
+  } catch(e) {}
+}
+
+function _startExperisPolling() {
+  _stopExperisPolling();
+  _experisStatusTimer = setInterval(_pollExperisStatus, 5000);
+}
+
+function _stopExperisPolling() {
+  if (_experisStatusTimer) { clearInterval(_experisStatusTimer); _experisStatusTimer = null; }
+}
+
+async function startExperisAutomation() {
+  const startBtn  = document.getElementById('experis-start-btn');
+  const statusLbl = document.getElementById('experis-automation-status-label');
+  if (startBtn) startBtn.disabled = true;
+  if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--accent)">⏳ Starting…</span>';
+  try {
+    const res  = await fetch(API_BASE + '/api/experis/start', {
+      method: 'POST', credentials: 'include',
+      headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const data = await safeJson(res);
+    if (!res.ok || !data.success) {
+      if (startBtn) startBtn.disabled = false;
+      if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+      toast('❌ ' + (data.message || 'Failed to start automation.'), 'err', 5000);
+      if (data.redirect === 'subscription') showCandidateView('subscription');
+      else if (data.redirect === 'resume')   showCandidateView('resume');
+      else if (data.redirect === 'collabera') showCandidateView('collabera');
+      return;
+    }
+    _setExperisRunning(true);
+    _startExperisPolling();
+    toast('✅ Experis Automation started.', 'ok');
+  } catch(e) {
+    if (startBtn) startBtn.disabled = false;
+    if (statusLbl) statusLbl.innerHTML = 'Status: <span style="color:var(--red)">🔴 Stopped</span>';
+    toast('❌ Network error — could not start automation.', 'err');
+  }
+}
+
+async function stopExperisAutomation() {
+  _stopExperisPolling();
+  try {
+    await fetch(API_BASE + '/api/experis/stop', {
+      method: 'POST', credentials: 'include',
+      headers: { 'X-CSRF-Token': getCsrfToken() },
+    });
+  } catch(e) {}
+  _setExperisRunning(false);
+  toast('Experis Automation stopped.', 'info');
+}
+
+async function _initExperisAutomationUI() {
+  await _pollExperisStatus();
+  if (_experisAutoRunning) _startExperisPolling();
 }
 
 // ═══════════════════════════════════════════════════════════════
