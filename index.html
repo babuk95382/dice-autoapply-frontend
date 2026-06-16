@@ -5019,9 +5019,9 @@ select option{background:var(--s2);}
         <div class="lp-price-card" role="listitem">
           <div class="lp-price-icon" aria-hidden="true">🆓</div>
           <div class="lp-price-name">Free Trial <span style="font-size:0.75rem;font-weight:500;color:var(--lp-text3)">(Candidate)</span></div>
-          <div class="lp-price-amount">₹0 <span>/ 3 Days</span></div>
+          <div class="lp-price-amount">₹0 <span>/ 1 Day</span></div>
           <ul class="lp-price-features" aria-label="Free Trial features">
-            <li>3-day platform access</li>
+            <li>1-day platform access</li>
             <li>Auto apply jobs on leading job portals</li>
             <li>Technology-based smart job matching</li>
             <li>Automatic scheduled job applications</li>
@@ -5169,7 +5169,7 @@ select option{background:var(--s2);}
                 What subscription plans does Futurehire Tech offer?
                 <span class="lp-faq-chevron" aria-hidden="true">›</span>
               </div>
-              <div class="lp-faq-a" role="region">Futurehire Tech offers a 3-day Free Trial at no cost, a Growth Plan at ₹499/month for candidates, and a Recruiter Monthly Plan at ₹2,999/month for recruiters. All paid plans include a 7-day refund guarantee.</div>
+              <div class="lp-faq-a" role="region">Futurehire Tech offers a 1-day Free Trial at no cost, a Growth Plan at ₹499/month for candidates, and a Recruiter Monthly Plan at ₹2,999/month for recruiters. All paid plans include a 7-day refund guarantee.</div>
             </div>
 
             <div class="lp-faq-item" onclick="toggleLpFaq(this)" role="listitem" aria-expanded="false">
@@ -5193,7 +5193,7 @@ select option{background:var(--s2);}
                 Can I try Futurehire Tech before paying?
                 <span class="lp-faq-chevron" aria-hidden="true">›</span>
               </div>
-              <div class="lp-faq-a" role="region">Yes. Futurehire Tech offers a 3-day free trial with access to core platform features including candidate management and workflow tools. No payment information is required to start your trial. Upgrade to a paid plan at any time to unlock full features.</div>
+              <div class="lp-faq-a" role="region">Yes. Futurehire Tech offers a 1-day free trial with access to core platform features including candidate management and workflow tools. No payment information is required to start your trial. Upgrade to a paid plan at any time to unlock full features.</div>
             </div>
 
             <div class="lp-faq-item" onclick="toggleLpFaq(this)" role="listitem" aria-expanded="false">
@@ -5289,7 +5289,7 @@ select option{background:var(--s2);}
         </div>
         <div style="margin-top:16px;font-size:12.5px;color:var(--lp-text3);line-height:1.6;">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:-2px;margin-right:4px"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M1 4l7 5 7-5"/></svg><a href="mailto:Support@futurehiretech.com" style="color:var(--lp-accent);text-decoration:none;">Support@futurehiretech.com</a><br>
-          Mon–Sat, 9 AM – 7 PM IST
+          Mon–Sat, 9 AM – 7 PM EST
         </div>
       </div>
     </div>
@@ -5549,11 +5549,11 @@ select option{background:var(--s2);}
             <div class="plan-price-row">
               <span class="plan-price-currency">₹</span>
               <span class="plan-price-amount">0</span>
-              <span class="plan-price-period">/ 3 Days</span>
+              <span class="plan-price-period">/ 1 Day</span>
             </div>
-            <div class="plan-desc-v2">Try the full platform risk-free for 3 days</div>
+            <div class="plan-desc-v2">Try the full platform risk-free for 1 day</div>
             <ul class="plan-features-v2">
-              <li><span class="plan-feat-check">✓</span>3-day platform access</li>
+              <li><span class="plan-feat-check">✓</span>1-day platform access</li>
               <li><span class="plan-feat-check">✓</span>Auto apply jobs on Dice</li>
               <li><span class="plan-feat-check">✓</span>Technology-based smart job matching</li>
               <li><span class="plan-feat-check">✓</span>Automatic Dice applications at 9 AM &amp; 1 PM EST</li>
@@ -6460,11 +6460,11 @@ select option{background:var(--s2);}
             <div class="plan-price-row">
               <span class="plan-price-currency">₹</span>
               <span class="plan-price-amount">0</span>
-              <span class="plan-price-period">/ 3 days</span>
+              <span class="plan-price-period">/ 1 day</span>
             </div>
             <div class="plan-desc-v2">Try the full recruiter platform risk-free</div>
             <ul class="plan-features-v2">
-              <li><span class="plan-feat-check">✓</span>3-day platform access</li>
+              <li><span class="plan-feat-check">✓</span>1-day platform access</li>
               <li><span class="plan-feat-check">✓</span>Up to 10 candidates</li>
               <li><span class="plan-feat-check">✓</span>Auto apply on Dice</li>
               <li><span class="plan-feat-check">✓</span>Live run dashboard</li>
@@ -8393,7 +8393,7 @@ async function candidateVerifyOtp() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('dashboard');
-      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
     } else {
       showCandidateView('subscription');
     }
@@ -8433,7 +8433,7 @@ async function candidateForgot() {
 
 function _applyCandidateSubscription(sub) {
   authState.candidate.plan = sub.plan;
-  const days    = sub.days_left ?? (sub.plan === 'trial' ? 3 : 30);
+  const days    = sub.days_left ?? (sub.plan === 'trial' ? 1 : 30);
   const expired = days <= 0;
   const isTrial = sub.plan === 'trial';
   const planLabels = { trial: 'Free Trial', self_monthly: 'Self-Candidate Monthly', pro: 'Pro Plan' };
@@ -8640,7 +8640,7 @@ async function recruiterVerifyOtp() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyRecruiterSubscription(data.user.subscription);
       showRecruiterView('dashboard');
-      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
     } else {
       showRecruiterView('subscription');
     }
@@ -8732,8 +8732,8 @@ async function activateRecruiterPlan(plan) {
         if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 2l7 4.5-7 4.5V2z" fill="currentColor"/></svg> Start Free Trial'; }
         return;
       }
-      _applyRecruiterSubscription({ plan: 'recruiter_trial', days_left: data.days || 3, status: 'active' });
-      toast('✅ Free trial activated! 3 days of full access.', 'ok', 5000);
+      _applyRecruiterSubscription({ plan: 'recruiter_trial', days_left: data.days || 1, status: 'active' });
+      toast('✅ Free trial activated! 1 day of full access.', 'ok', 5000);
       showRecruiterView('dashboard');
       sidebarSetActive('logs', false);
     } catch(e) {
@@ -9004,8 +9004,8 @@ async function activatePlan(plan) {
       const res  = await apiPost('/api/subscription/create-order', { plan:'trial' });
       const data = await safeJson(res);
       if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; } return; }
-      _applyCandidateSubscription({ plan:'trial', days_left: data.days || 3, status:'active' });
-      toast('✅ Free trial activated! 3 days of full access.', 'ok', 5000);
+      _applyCandidateSubscription({ plan:'trial', days_left: data.days || 1, status:'active' });
+      toast('✅ Free trial activated! 1 day of full access.', 'ok', 5000);
       showCandidateView('dashboard');
       sidebarSetActive('analytics', false);
     } catch(e) {
@@ -11880,7 +11880,7 @@ async function cSuSubmitSignup() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('dashboard');
-      toast('✅ Account created! Your 3-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
     } else {
       showCandidateView('subscription');
     }
