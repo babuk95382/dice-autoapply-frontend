@@ -863,6 +863,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0;}
 /* ── Password field ── */
 .pw-wrap{position:relative;display:flex;align-items:center;}
 .pw-wrap input{padding-right:44px;width:100%;}
+/* ── Phone input with country code dropdown ── */
+.phone-input-wrap{display:flex;align-items:stretch;gap:0;border:1.5px solid var(--border2);border-radius:var(--r);overflow:hidden;background:var(--s3);transition:border-color 0.18s;}
+.phone-input-wrap:focus-within{border-color:var(--accent);}
+.country-code-select-wrap{flex-shrink:0;border-right:1px solid var(--border2);background:var(--s4);}
+.country-code-select{appearance:none;-webkit-appearance:none;background:transparent;border:none;padding:0 10px 0 10px;height:100%;min-width:96px;font-size:13.5px;font-family:inherit;color:var(--text);cursor:pointer;outline:none;line-height:1;}
+.country-code-select:focus{outline:none;}
+.phone-number-input{flex:1;border:none;background:transparent;padding:0 14px;font-size:14px;font-family:inherit;color:var(--text);outline:none;min-width:0;}
+.phone-number-input::placeholder{color:var(--text3);}
+.phone-input-wrap .phone-number-input{padding-top:0;padding-bottom:0;height:44px;}
 .pw-wrap input[type=password]::-ms-reveal,
 .pw-wrap input[type=password]::-ms-clear,
 .pw-wrap input[type=text]::-ms-reveal{display:none;}
@@ -5021,7 +5030,7 @@ select option{background:var(--s2);}
           <div class="lp-price-name">Free Trial <span style="font-size:0.75rem;font-weight:500;color:var(--lp-text3)">(Candidate)</span></div>
           <div class="lp-price-amount">₹0 <span>/ 1 Day</span></div>
           <ul class="lp-price-features" aria-label="Free Trial features">
-            <li>1-day platform access</li>
+            <li>2-day platform access</li>
             <li>Auto apply jobs on leading job portals</li>
             <li>Technology-based smart job matching</li>
             <li>Automatic scheduled job applications</li>
@@ -5193,7 +5202,7 @@ select option{background:var(--s2);}
                 Can I try Futurehire Tech before paying?
                 <span class="lp-faq-chevron" aria-hidden="true">›</span>
               </div>
-              <div class="lp-faq-a" role="region">Yes. Futurehire Tech offers a 1-day free trial with access to core platform features including candidate management and workflow tools. No payment information is required to start your trial. Upgrade to a paid plan at any time to unlock full features.</div>
+              <div class="lp-faq-a" role="region">Yes. Futurehire Tech offers a 2-day free trial with access to core platform features including candidate management and workflow tools. No payment information is required to start your trial. Upgrade to a paid plan at any time to unlock full features.</div>
             </div>
 
             <div class="lp-faq-item" onclick="toggleLpFaq(this)" role="listitem" aria-expanded="false">
@@ -5440,7 +5449,46 @@ select option{background:var(--s2);}
               </div>
               <div id="c-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✓ Email verified!</div>
             </div>
-            <div class="field"><label>Contact Number</label><input id="c-su-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel"></div>
+            <div class="field">
+              <label>Contact Number</label>
+              <div class="phone-input-wrap" id="c-phone-wrap">
+                <div class="country-code-select-wrap">
+                  <select id="c-su-country-code" class="country-code-select" onchange="updatePhoneFlag('c')">
+                    <option value="+91" data-flag="🇮🇳">🇮🇳 +91</option>
+                    <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+                    <option value="+44" data-flag="🇬🇧">🇬🇧 +44</option>
+                    <option value="+61" data-flag="🇦🇺">🇦🇺 +61</option>
+                    <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                    <option value="+65" data-flag="🇸🇬">🇸🇬 +65</option>
+                    <option value="+60" data-flag="🇲🇾">🇲🇾 +60</option>
+                    <option value="+49" data-flag="🇩🇪">🇩🇪 +49</option>
+                    <option value="+33" data-flag="🇫🇷">🇫🇷 +33</option>
+                    <option value="+81" data-flag="🇯🇵">🇯🇵 +81</option>
+                    <option value="+86" data-flag="🇨🇳">🇨🇳 +86</option>
+                    <option value="+82" data-flag="🇰🇷">🇰🇷 +82</option>
+                    <option value="+55" data-flag="🇧🇷">🇧🇷 +55</option>
+                    <option value="+52" data-flag="🇲🇽">🇲🇽 +52</option>
+                    <option value="+27" data-flag="🇿🇦">🇿🇦 +27</option>
+                    <option value="+234" data-flag="🇳🇬">🇳🇬 +234</option>
+                    <option value="+92" data-flag="🇵🇰">🇵🇰 +92</option>
+                    <option value="+880" data-flag="🇧🇩">🇧🇩 +880</option>
+                    <option value="+94" data-flag="🇱🇰">🇱🇰 +94</option>
+                    <option value="+977" data-flag="🇳🇵">🇳🇵 +977</option>
+                    <option value="+966" data-flag="🇸🇦">🇸🇦 +966</option>
+                    <option value="+974" data-flag="🇶🇦">🇶🇦 +974</option>
+                    <option value="+968" data-flag="🇴🇲">🇴🇲 +968</option>
+                    <option value="+973" data-flag="🇧🇭">🇧🇭 +973</option>
+                    <option value="+962" data-flag="🇯🇴">🇯🇴 +962</option>
+                    <option value="+20" data-flag="🇪🇬">🇪🇬 +20</option>
+                    <option value="+254" data-flag="🇰🇪">🇰🇪 +254</option>
+                    <option value="+64" data-flag="🇳🇿">🇳🇿 +64</option>
+                    <option value="+353" data-flag="🇮🇪">🇮🇪 +353</option>
+                    <option value="+1" data-flag="🇨🇦">🇨🇦 +1</option>
+                  </select>
+                </div>
+                <input id="c-su-phone" type="tel" class="phone-number-input" placeholder="98765 43210" autocomplete="tel" maxlength="15">
+              </div>
+            </div>
             <div class="field">
               <label>Password</label>
               <div class="pw-wrap">
@@ -5551,9 +5599,9 @@ select option{background:var(--s2);}
               <span class="plan-price-amount">0</span>
               <span class="plan-price-period">/ 1 Day</span>
             </div>
-            <div class="plan-desc-v2">Try the full platform risk-free for 1 day</div>
+            <div class="plan-desc-v2">Try the full platform risk-free for 2 days</div>
             <ul class="plan-features-v2">
-              <li><span class="plan-feat-check">✓</span>1-day platform access</li>
+              <li><span class="plan-feat-check">✓</span>2-day platform access</li>
               <li><span class="plan-feat-check">✓</span>Auto apply jobs on Dice</li>
               <li><span class="plan-feat-check">✓</span>Technology-based smart job matching</li>
               <li><span class="plan-feat-check">✓</span>Automatic Dice applications at 9 AM &amp; 1 PM EST</li>
@@ -6351,7 +6399,46 @@ select option{background:var(--s2);}
               </div>
               <div id="r-su-otp-verified-badge" class="otp-verified-badge" style="display:none">✓ Email verified!</div>
             </div>
-            <div class="field"><label>Contact Number</label><input id="r-su-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel"></div>
+            <div class="field">
+              <label>Contact Number</label>
+              <div class="phone-input-wrap" id="r-phone-wrap">
+                <div class="country-code-select-wrap">
+                  <select id="r-su-country-code" class="country-code-select" onchange="updatePhoneFlag('r')">
+                    <option value="+91" data-flag="🇮🇳">🇮🇳 +91</option>
+                    <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+                    <option value="+44" data-flag="🇬🇧">🇬🇧 +44</option>
+                    <option value="+61" data-flag="🇦🇺">🇦🇺 +61</option>
+                    <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                    <option value="+65" data-flag="🇸🇬">🇸🇬 +65</option>
+                    <option value="+60" data-flag="🇲🇾">🇲🇾 +60</option>
+                    <option value="+49" data-flag="🇩🇪">🇩🇪 +49</option>
+                    <option value="+33" data-flag="🇫🇷">🇫🇷 +33</option>
+                    <option value="+81" data-flag="🇯🇵">🇯🇵 +81</option>
+                    <option value="+86" data-flag="🇨🇳">🇨🇳 +86</option>
+                    <option value="+82" data-flag="🇰🇷">🇰🇷 +82</option>
+                    <option value="+55" data-flag="🇧🇷">🇧🇷 +55</option>
+                    <option value="+52" data-flag="🇲🇽">🇲🇽 +52</option>
+                    <option value="+27" data-flag="🇿🇦">🇿🇦 +27</option>
+                    <option value="+234" data-flag="🇳🇬">🇳🇬 +234</option>
+                    <option value="+92" data-flag="🇵🇰">🇵🇰 +92</option>
+                    <option value="+880" data-flag="🇧🇩">🇧🇩 +880</option>
+                    <option value="+94" data-flag="🇱🇰">🇱🇰 +94</option>
+                    <option value="+977" data-flag="🇳🇵">🇳🇵 +977</option>
+                    <option value="+966" data-flag="🇸🇦">🇸🇦 +966</option>
+                    <option value="+974" data-flag="🇶🇦">🇶🇦 +974</option>
+                    <option value="+968" data-flag="🇴🇲">🇴🇲 +968</option>
+                    <option value="+973" data-flag="🇧🇭">🇧🇭 +973</option>
+                    <option value="+962" data-flag="🇯🇴">🇯🇴 +962</option>
+                    <option value="+20" data-flag="🇪🇬">🇪🇬 +20</option>
+                    <option value="+254" data-flag="🇰🇪">🇰🇪 +254</option>
+                    <option value="+64" data-flag="🇳🇿">🇳🇿 +64</option>
+                    <option value="+353" data-flag="🇮🇪">🇮🇪 +353</option>
+                    <option value="+1" data-flag="🇨🇦">🇨🇦 +1</option>
+                  </select>
+                </div>
+                <input id="r-su-phone" type="tel" class="phone-number-input" placeholder="98765 43210" autocomplete="tel" maxlength="15">
+              </div>
+            </div>
             <div class="field">
               <label>Password</label>
               <div class="pw-wrap">
@@ -6460,11 +6547,11 @@ select option{background:var(--s2);}
             <div class="plan-price-row">
               <span class="plan-price-currency">₹</span>
               <span class="plan-price-amount">0</span>
-              <span class="plan-price-period">/ 1 day</span>
+              <span class="plan-price-period">/ 2 days</span>
             </div>
             <div class="plan-desc-v2">Try the full recruiter platform risk-free</div>
             <ul class="plan-features-v2">
-              <li><span class="plan-feat-check">✓</span>1-day platform access</li>
+              <li><span class="plan-feat-check">✓</span>2-day platform access</li>
               <li><span class="plan-feat-check">✓</span>Up to 10 candidates</li>
               <li><span class="plan-feat-check">✓</span>Auto apply on Dice</li>
               <li><span class="plan-feat-check">✓</span>Live run dashboard</li>
@@ -8388,12 +8475,20 @@ function _applyCandidateDashboard(user) {
   document.getElementById('c-live-avatar').textContent = name[0].toUpperCase();
 }
 
+// ── Phone helper: combine country code + number ──
+function getPhoneWithCode(prefix) {
+  const code   = (document.getElementById(prefix+'-su-country-code')?.value || '+91').trim();
+  const number = document.getElementById(prefix+'-su-phone').value.trim().replace(/^\+\d+\s*/, '');
+  return number ? code + number : '';
+}
+function updatePhoneFlag(prefix) { /* no-op: flag shown in option text */ }
+
 // ── Candidate OTP signup flow ──
 async function candidateSendOtp() {
   const fname = document.getElementById('c-su-fname').value.trim();
   const lname = document.getElementById('c-su-lname').value.trim();
   const email = document.getElementById('c-su-email').value.trim();
-  const phone = document.getElementById('c-su-phone').value.trim();
+  const phone = getPhoneWithCode('c');
   const pass  = document.getElementById('c-su-pass').value.trim();
   const msg   = document.getElementById('c-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
@@ -8423,7 +8518,7 @@ async function candidateVerifyOtp() {
   const fname = document.getElementById('c-su-fname').value.trim();
   const lname = document.getElementById('c-su-lname').value.trim();
   const email = document.getElementById('c-su-email').value.trim();
-  const phone = document.getElementById('c-su-phone').value.trim();
+  const phone = getPhoneWithCode('c');
   const pass  = document.getElementById('c-su-pass').value.trim();
   const otp   = document.getElementById('c-su-otp').value.trim();
   const msg   = document.getElementById('c-otp-msg');
@@ -8451,7 +8546,7 @@ async function candidateVerifyOtp() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('dashboard');
-      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 2-day free trial is now active.', 'ok', 5000);
     } else {
       showCandidateView('subscription');
     }
@@ -8640,7 +8735,7 @@ async function recruiterSendOtp() {
   const fname = document.getElementById('r-su-fname').value.trim();
   const lname = document.getElementById('r-su-lname').value.trim();
   const email = document.getElementById('r-su-email').value.trim();
-  const phone = document.getElementById('r-su-phone').value.trim();
+  const phone = getPhoneWithCode('r');
   const pass  = document.getElementById('r-su-pass').value.trim();
   const msg   = document.getElementById('r-signup-msg');
   if (!fname||!lname||!email||!phone||!pass) { showMsg(msg, 'Please fill all fields.', 'err'); return; }
@@ -8669,7 +8764,7 @@ async function recruiterVerifyOtp() {
   const fname = document.getElementById('r-su-fname').value.trim();
   const lname = document.getElementById('r-su-lname').value.trim();
   const email = document.getElementById('r-su-email').value.trim();
-  const phone = document.getElementById('r-su-phone').value.trim();
+  const phone = getPhoneWithCode('r');
   const pass  = document.getElementById('r-su-pass').value.trim();
   const otp   = document.getElementById('r-su-otp').value.trim();
   const msg   = document.getElementById('r-otp-msg');
@@ -8698,7 +8793,7 @@ async function recruiterVerifyOtp() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyRecruiterSubscription(data.user.subscription);
       showRecruiterView('dashboard');
-      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 2-day free trial is now active.', 'ok', 5000);
     } else {
       showRecruiterView('subscription');
     }
@@ -8791,7 +8886,7 @@ async function activateRecruiterPlan(plan) {
         return;
       }
       _applyRecruiterSubscription({ plan: 'recruiter_trial', days_left: data.days || 1, status: 'active' });
-      toast('✅ Free trial activated! 1 day of full access.', 'ok', 5000);
+      toast('✅ Free trial activated! 2 days of full access.', 'ok', 5000);
       showRecruiterView('dashboard');
       sidebarSetActive('logs', false);
     } catch(e) {
@@ -9063,7 +9158,7 @@ async function activatePlan(plan) {
       const data = await safeJson(res);
       if (!res.ok) { toast('❌ ' + (data.error || 'Could not activate trial'), 'err'); if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; } return; }
       _applyCandidateSubscription({ plan:'trial', days_left: data.days || 1, status:'active' });
-      toast('✅ Free trial activated! 1 day of full access.', 'ok', 5000);
+      toast('✅ Free trial activated! 2 days of full access.', 'ok', 5000);
       showCandidateView('dashboard');
       sidebarSetActive('analytics', false);
     } catch(e) {
@@ -12036,7 +12131,7 @@ async function cSuSubmitSignup() {
   const fname = document.getElementById('c-su-fname').value.trim();
   const lname = document.getElementById('c-su-lname').value.trim();
   const email = _otpState.c_su.email || document.getElementById('c-su-email').value.trim();
-  const phone = document.getElementById('c-su-phone').value.trim();
+  const phone = getPhoneWithCode('c');
   const pass  = document.getElementById('c-su-pass').value.trim();
   const msg   = document.getElementById('c-signup-msg');
   if (!_otpState.c_su.verified) { showMsg(msg, '❌ Please verify your email OTP first.', 'err'); return; }
@@ -12057,7 +12152,7 @@ async function cSuSubmitSignup() {
     if (data.user.subscription && data.user.subscription.days_left > 0) {
       _applyCandidateSubscription(data.user.subscription);
       showCandidateView('dashboard');
-      toast('✅ Account created! Your 1-day free trial is now active.', 'ok', 5000);
+      toast('✅ Account created! Your 2-day free trial is now active.', 'ok', 5000);
     } else {
       showCandidateView('subscription');
     }
@@ -12197,7 +12292,7 @@ async function rSuSubmitSignup() {
   const fname = document.getElementById('r-su-fname').value.trim();
   const lname = document.getElementById('r-su-lname').value.trim();
   const email = _otpState.r_su.email || document.getElementById('r-su-email').value.trim();
-  const phone = document.getElementById('r-su-phone').value.trim();
+  const phone = getPhoneWithCode('r');
   const pass  = document.getElementById('r-su-pass').value.trim();
   const msg   = document.getElementById('r-signup-msg');
   if (!_otpState.r_su.verified) { showMsg(msg, '❌ Please verify your email OTP first.', 'err'); return; }
