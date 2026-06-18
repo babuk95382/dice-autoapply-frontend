@@ -7207,7 +7207,65 @@ select option{background:var(--s2);}
         </div>
         </div><!-- /admin-page-automation -->
 
-        <!-- ══ PAGE: Payment Gateway ══ -->
+        <!-- ══ PAGE: Manual Run ══ -->
+        <div class="admin-page" id="admin-page-manualrun" style="display:none">
+          <div class="section" style="margin-top:8px">
+            <div class="section-head">
+              <div class="section-bar" style="background:var(--purple)"></div>
+              <span class="section-title">Manual Run</span>
+              <span style="margin-left:auto;font-size:10px;padding:2px 10px;border-radius:999px;background:rgba(124,92,252,0.1);color:var(--purple);border:1px solid rgba(124,92,252,0.22);">Admin Only</span>
+            </div>
+            <div class="card" style="max-width:600px">
+              <p style="font-size:13px;color:var(--text2);margin:0 0 20px">
+                Manually trigger automation for any user by email or user ID. Use this to re-run failed jobs without the user needing to start it themselves.
+              </p>
+
+              <!-- User Identifier -->
+              <div class="field" style="margin-bottom:14px">
+                <label style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block">User Email or User ID</label>
+                <input id="mr-identifier" type="text" placeholder="e.g. user@example.com or UUID"
+                  style="width:100%;padding:10px 14px;border-radius:var(--r);border:1.5px solid var(--border2);background:var(--s3);color:var(--text);font-size:13.5px;outline:none;transition:border-color .18s"
+                  onfocus="this.style.borderColor='var(--purple)'" onblur="this.style.borderColor='var(--border2)'"
+                  oninput="mrClearResult()">
+              </div>
+
+              <!-- Platform Dropdown -->
+              <div class="field" style="margin-bottom:20px">
+                <label style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block">Automation Platform</label>
+                <select id="mr-platform"
+                  style="width:100%;padding:10px 14px;border-radius:var(--r);border:1.5px solid var(--border2);background:var(--s3);color:var(--text);font-size:13.5px;outline:none;appearance:none;cursor:pointer;transition:border-color .18s"
+                  onfocus="this.style.borderColor='var(--purple)'" onblur="this.style.borderColor='var(--border2)'"
+                  onchange="mrClearResult()">
+                  <option value="">— Select Platform —</option>
+                  <option value="dice">🎲 Dice</option>
+                  <option value="collabera">🔷 Collabera</option>
+                  <option value="inspyr">🔶 Inspyr Solutions</option>
+                  <option value="judge">⚖️ Judge Group</option>
+                  <option value="experis">🌐 Experis</option>
+                </select>
+              </div>
+
+              <!-- Run Button -->
+              <button id="mr-run-btn" onclick="adminManualRun()"
+                style="width:100%;padding:11px 20px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--purple),#6d48e5);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .18s;display:flex;align-items:center;justify-content:center;gap:8px">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11V15.89a1.5 1.5 0 0 0 2.3 1.269l9.344-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84z"/></svg>
+                Run Automation
+              </button>
+
+              <!-- Result Banner -->
+              <div id="mr-result" style="display:none;margin-top:14px;padding:12px 16px;border-radius:var(--r);font-size:13px;font-weight:500"></div>
+            </div>
+
+            <!-- Active Jobs -->
+            <div class="card" style="margin-top:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Active Manual Jobs</span>
+                <button onclick="mrRefreshJobs()" style="background:var(--s3);border:1px solid var(--border2);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--text2);cursor:pointer">⟳ Refresh</button>
+              </div>
+              <div id="mr-jobs-table" style="font-size:12.5px;color:var(--text3)">No active jobs.</div>
+            </div>
+          </div>
+        </div><!-- /admin-page-manualrun -->
         <div class="admin-page" id="admin-page-payment" style="display:none">
         <div class="section" id="admin-section-payment" style="margin-top:8px">
           <div class="section-head">
@@ -10582,6 +10640,7 @@ const SIDEBAR_MENUS = {
       ]},
       { label: 'Control', items: [
         { id: 'automation', icon: '◈', label: 'Automation Control', action: () => showAdminPage('automation', 'Automation Control') },
+        { id: 'manualrun',  icon: '▶', label: 'Manual Run',         action: () => showAdminPage('manualrun',  'Manual Run') },
         { id: 'payment',    icon: '💳', label: 'Payment Gateway',   action: () => showAdminPage('payment',   'Payment Gateway') },
         { id: 'syslogs',    icon: '▣', label: 'System Logs',        action: () => { showAdminPage('syslogs', 'System Logs'); startLiveDashboardPolling(); } },
         { id: 'platform',   icon: '⊙', label: 'Platform Settings',  action: () => showAdminPage('platform',  'Platform Settings') },
@@ -10805,7 +10864,7 @@ function sidebarToggleDrawer()         { sbToggle(); }
 function sbClosePanel()                { sbClose(); }
 
 function showAdminPage(pageId, title) {
-  const pages = ['overview','users','subs','revenue','automation','payment','syslogs','platform','security'];
+  const pages = ['overview','users','subs','revenue','automation','manualrun','payment','syslogs','platform','security'];
   pages.forEach(p => {
     const el = document.getElementById('admin-page-' + p);
     if (el) el.style.display = (p === pageId) ? '' : 'none';
@@ -10820,6 +10879,8 @@ function showAdminPage(pageId, title) {
   if (pageId === 'revenue') loadRevenueData();
   // Load cashfree settings when navigating to payment page
   if (pageId === 'payment') { try { loadCashfreeSettings(); } catch(e) {} }
+  // Refresh active manual-run jobs when navigating to manual run page
+  if (pageId === 'manualrun') { try { mrRefreshJobs(); } catch(e) {} }
 }
 
 function switchAdminTab(tabId) {
@@ -10857,6 +10918,122 @@ async function loadAdminSettings() {
       document.getElementById('a-rec-parallel').value  = data.max_parallel || 5;
     }
   } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN — MANUAL RUN
+// ══════════════════════════════════════════════
+
+const _MR_PLATFORM_LABELS = {
+  dice: '🎲 Dice', collabera: '🔷 Collabera',
+  inspyr: '🔶 Inspyr Solutions', judge: '⚖️ Judge Group', experis: '🌐 Experis'
+};
+
+function mrClearResult() {
+  const el = document.getElementById('mr-result');
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
+
+function mrShowResult(msg, type) {
+  const el = document.getElementById('mr-result');
+  if (!el) return;
+  const styles = {
+    ok:   'background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:var(--green)',
+    err:  'background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.25);color:var(--red)',
+    info: 'background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);color:var(--blue)',
+  };
+  el.style.cssText = (styles[type] || styles.info) + ';display:block;padding:12px 16px;border-radius:var(--r);font-size:13px;font-weight:500;';
+  el.textContent = msg;
+}
+
+async function adminManualRun() {
+  const identifier = document.getElementById('mr-identifier').value.trim();
+  const platform   = document.getElementById('mr-platform').value;
+  const btn        = document.getElementById('mr-run-btn');
+
+  if (!identifier) { mrShowResult('⚠ Please enter a user email or user ID.', 'err'); return; }
+  if (!platform)   { mrShowResult('⚠ Please select a platform.', 'err'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" style="animation:spin 1s linear infinite"><path d="M10 3a7 7 0 1 0 7 7h-2a5 5 0 1 1-5-5V3z"/></svg> Starting…';
+  mrShowResult(`Starting ${_MR_PLATFORM_LABELS[platform]} for ${identifier}…`, 'info');
+
+  try {
+    const res  = await apiPost('/api/admin/manual-run', { identifier, platform });
+    const data = await safeJson(res);
+    if (res.ok && data.success) {
+      mrShowResult(
+        `✅ ${_MR_PLATFORM_LABELS[platform]} automation started!\n` +
+        `User: ${data.user_id} (${data.user_type})\nStarted at: ${new Date(data.started_at).toLocaleString()}`,
+        'ok'
+      );
+      document.getElementById('mr-identifier').value = '';
+      document.getElementById('mr-platform').value   = '';
+      setTimeout(mrRefreshJobs, 1000);
+    } else {
+      mrShowResult('❌ ' + (data.error || 'Failed to start automation.'), 'err');
+    }
+  } catch(e) {
+    mrShowResult('❌ Network error — could not reach the server.', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11V15.89a1.5 1.5 0 0 0 2.3 1.269l9.344-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84z"/></svg> Run Automation';
+  }
+}
+
+async function mrRefreshJobs() {
+  const container = document.getElementById('mr-jobs-table');
+  if (!container) return;
+  try {
+    const res  = await fetch(API_BASE + '/api/admin/manual-run/status', { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const data = await safeJson(res);
+    const jobs = data.active_jobs || [];
+    if (jobs.length === 0) {
+      container.innerHTML = '<span style="color:var(--text3);font-size:12.5px">No active jobs.</span>';
+      return;
+    }
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead>
+          <tr style="color:var(--text3);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:6px 8px;font-weight:600">Job Key</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:600">Started At</th>
+            <th style="text-align:right;padding:6px 8px;font-weight:600">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${jobs.map(j => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px;font-family:monospace;color:var(--text)">${j.job_key}</td>
+              <td style="padding:8px;color:var(--text2)">${new Date(j.started_at).toLocaleString()}</td>
+              <td style="padding:8px;text-align:right">
+                <button onclick="mrStopJob('${j.job_key}')"
+                  style="background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);color:var(--red);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">
+                  ⏹ Stop
+                </button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    container.innerHTML = '<span style="color:var(--red);font-size:12.5px">Failed to load active jobs.</span>';
+  }
+}
+
+async function mrStopJob(jobKey) {
+  if (!confirm(`Stop job: ${jobKey}?`)) return;
+  try {
+    const res  = await apiPost('/api/admin/manual-run/stop', { job_key: jobKey });
+    const data = await safeJson(res);
+    if (res.ok) {
+      toast('⏹ Stop signal sent for ' + jobKey, 'ok');
+      setTimeout(mrRefreshJobs, 800);
+    } else {
+      toast('❌ ' + (data.error || 'Could not stop job'), 'err');
+    }
+  } catch(e) {
+    toast('❌ Network error', 'err');
+  }
 }
 
 async function loadAdminDashboard() {
