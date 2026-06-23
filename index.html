@@ -7728,6 +7728,29 @@ select option{background:var(--s2);}
 const API_BASE = "https://futurehiretech-backend.onrender.com";
 const _netErrMsg = '❌ Cannot connect to the server';
 
+// ── Cross-origin token storage ──────────────────────────────────
+// Because the backend (onrender.com) and frontend (vercel.app) are on
+// different origins, the browser blocks cross-origin cookies even with
+// SameSite=None when the domains differ at the eTLD+1 level.
+// We store the JWT access token in sessionStorage and send it via the
+// Authorization: Bearer header, which always works cross-origin.
+// The refresh token is stored in sessionStorage as well so the silent
+// refresh flow works after a page reload.
+const _TOKEN_KEY   = 'fht_access_token';
+const _REFRESH_KEY = 'fht_refresh_token';
+
+function _storeTokens(accessToken, refreshToken) {
+  try {
+    if (accessToken)  sessionStorage.setItem(_TOKEN_KEY,   accessToken);
+    if (refreshToken) sessionStorage.setItem(_REFRESH_KEY, refreshToken);
+  } catch(e) {}
+}
+function _getAccessToken()  { try { return sessionStorage.getItem(_TOKEN_KEY)  || ''; } catch(e) { return ''; } }
+function _getRefreshToken() { try { return sessionStorage.getItem(_REFRESH_KEY) || ''; } catch(e) { return ''; } }
+function _clearTokens() {
+  try { sessionStorage.removeItem(_TOKEN_KEY); sessionStorage.removeItem(_REFRESH_KEY); } catch(e) {}
+}
+
 let currentTab = 'candidate';
 let selfTags = [];
 let candidates = [];      // legacy — synced from rcCandidates
@@ -7751,6 +7774,8 @@ function _clearAllAuthStorage() {
   // Clear any localStorage auth/role keys used by this app
   const lsKeysToRemove = ['rc_pw', 'rco_pw', 'rin_pw'];
   lsKeysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+  // Clear stored JWT tokens (cross-origin Bearer auth)
+  _clearTokens();
   // Do NOT clear theme preference — that's not auth-related
   // Reset in-memory auth state
   authState.candidate = { loggedIn: false, user: null, plan: null };
@@ -7776,28 +7801,41 @@ async function _restoreSessionOnLoad() {
     // new one on page load so we must sync before any POST/GET with auth)
     await _initCsrfToken();
 
-    // Step 2: Try /api/auth/me directly — works if the access_token cookie
-    // is still valid (i.e. refreshed within the last 15 minutes)
+    // Step 2: Try /api/auth/me using stored Bearer token (primary cross-origin method)
+    // or HTTP-only cookie (works if same origin). Bearer token is preferred because
+    // cookies are blocked cross-origin (vercel.app → onrender.com).
+    const storedToken = _getAccessToken();
+    const bearerHeader = storedToken ? { 'Authorization': 'Bearer ' + storedToken } : {};
     let meRes = await fetch(API_BASE + '/api/auth/me', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCsrfToken() }
+      headers: { 'X-CSRF-Token': getCsrfToken(), ...bearerHeader }
     });
 
-    // Step 3: If access token expired (401), rotate via refresh token
+    // Step 3: If access token expired/missing (401), rotate via refresh token
     if (meRes.status === 401) {
+      const storedRefresh = _getRefreshToken();
       const refreshRes = await fetch(API_BASE + '/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' }
+        headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: storedRefresh || undefined })
       });
-      if (!refreshRes.ok) return; // No valid refresh token — stay on landing
+      if (!refreshRes.ok) { _clearTokens(); return; } // No valid refresh token
+
+      // Store new access token from refresh response
+      try {
+        const rd = await refreshRes.json();
+        if (rd.access_token) _storeTokens(rd.access_token, null);
+      } catch(e) {}
 
       // Refresh rotated the session; get a fresh CSRF for the new token
       await _initCsrfToken();
 
+      const newToken = _getAccessToken();
+      const newBearerHeader = newToken ? { 'Authorization': 'Bearer ' + newToken } : {};
       meRes = await fetch(API_BASE + '/api/auth/me', {
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken() }
+        headers: { 'X-CSRF-Token': getCsrfToken(), ...newBearerHeader }
       });
     }
 
@@ -7947,15 +7985,26 @@ async function _tryRefreshToken() {
   }
   _refreshing = true;
   try {
+    // Send the refresh token in the JSON body (cross-origin cookie fallback).
+    // The server also accepts the cookie if it made it through, so this is
+    // fully backward-compatible.
+    const refreshToken = _getRefreshToken();
     const r = await fetch(API_BASE + '/api/auth/refresh', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCsrfToken() }
+      headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken || undefined })
     });
     const ok = r.ok;
-    // IMPORTANT: After token rotation the server issues a new CSRF token.
-    // Re-sync it so subsequent requests don't get CSRF-rejected.
-    if (ok) await _initCsrfToken();
+    if (ok) {
+      // Store the new access token from the response body
+      try {
+        const data = await r.json();
+        if (data.access_token) _storeTokens(data.access_token, null);
+      } catch(e) {}
+      // Re-sync CSRF token after rotation
+      await _initCsrfToken();
+    }
     _refreshQueue.forEach(resolve => resolve(ok));
     _refreshQueue = [];
     return ok;
@@ -7994,9 +8043,13 @@ async function apiFetch(url, opts = {}, _retry = true) {
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     await _initCsrfToken();
   }
+  // Always attach the JWT via Authorization header — this is the reliable
+  // cross-origin auth mechanism (cookie domain mismatch breaks cookies).
+  const token = _getAccessToken();
+  const authHeader = token ? { 'Authorization': 'Bearer ' + token } : {};
   const res = await fetch(API_BASE + url, {
     credentials: 'include', ...opts,
-    headers: { 'X-CSRF-Token': getCsrfToken(), ...(opts.headers || {}) }
+    headers: { 'X-CSRF-Token': getCsrfToken(), ...authHeader, ...(opts.headers || {}) }
   });
   if (res.status === 401 && _retry) {
     const refreshed = await _tryRefreshToken();
@@ -8430,6 +8483,9 @@ async function candidateLogin() {
     const res  = await apiPost('/api/auth/candidate/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
+    // Store JWT tokens for cross-origin Bearer auth (cookies are blocked cross-origin)
+    if (data.access_token)  _storeTokens(data.access_token, null);
+    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
@@ -8536,6 +8592,7 @@ async function candidateVerifyOtp() {
     const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    if (data.access_token) _storeTokens(data.access_token, null);
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -8705,6 +8762,9 @@ async function recruiterLogin() {
     const res  = await apiPost('/api/auth/recruiter/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
+    // Store JWT tokens for cross-origin Bearer auth
+    if (data.access_token)  _storeTokens(data.access_token, null);
+    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
@@ -8782,6 +8842,7 @@ async function recruiterVerifyOtp() {
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    if (data.access_token) _storeTokens(data.access_token, null);
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
@@ -8940,6 +9001,9 @@ async function adminLogin() {
     const res  = await apiPost('/api/auth/admin/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid credentials'), 'err'); return; }
+    // Store JWT tokens for cross-origin Bearer auth
+    if (data.access_token)  _storeTokens(data.access_token, null);
+    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.admin.loggedIn = true;
     document.getElementById('a-auth-login').style.display = 'none';
@@ -12142,6 +12206,7 @@ async function cSuSubmitSignup() {
     const res  = await apiPost('/api/auth/candidate/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    if (data.access_token) _storeTokens(data.access_token, null);
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -12303,6 +12368,7 @@ async function rSuSubmitSignup() {
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
+    if (data.access_token) _storeTokens(data.access_token, null);
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
