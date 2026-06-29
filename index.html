@@ -9128,7 +9128,7 @@ function _updateLockedEmailDisplay(lockedEmail) {
 async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
   try {
-    const res  = await fetch(`${API_BASE}/api/candidate/details`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res  = await apiFetch('/api/candidate/details');
     const data = await safeJson(res);
     if (res.ok && data.found && data.details) {
       const d = data.details;
@@ -9405,7 +9405,7 @@ async function loadRecruiterCandidates() {
   const tbody = document.getElementById('rc-saved-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="rc-empty"><div class="skeleton-line skeleton" style="width:60%;margin:0 auto 8px"></div></td></tr>';
   try {
-    const res  = await fetch(`${API_BASE}/api/recruiter/candidates`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
+    const res  = await apiFetch('/api/recruiter/candidates');
     const data = await safeJson(res);
     if (!res.ok || !data.ok) { renderRcTable(); return; }
     rcCandidates = data.candidates || [];
@@ -9571,10 +9571,9 @@ async function saveRcCandidate() {
   try {
     let res;
     if (rcEditingId) {
-      res = await fetch(`${API_BASE}/api/recruiter/candidates/${rcEditingId}`, {
+      res = await apiFetch(`/api/recruiter/candidates/${rcEditingId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
     } else {
