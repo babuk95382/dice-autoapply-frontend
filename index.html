@@ -9404,6 +9404,11 @@ async function continueWithINR() {
   if (btn) { btn.disabled = false; }
 }
 
+// NOTE: This is a ONE-TIME PAYMENT flow (PayPal Orders API), not a recurring
+// subscription. Paying activates the plan for its fixed number of days
+// (30 for monthly, 90 for quarterly). Nothing auto-renews or auto-charges —
+// when the plan expires, the user simply comes back and pays again to
+// activate a new period.
 async function continueWithUSD() {
   const plan = _currencyPopupPlan;
   closeCurrencyPopup();
@@ -9412,11 +9417,11 @@ async function continueWithUSD() {
   const btn = document.getElementById(btnMap[plan]);
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Redirecting to PayPal…'; }
   try {
-    const res  = await apiPost('/api/paypal/create-subscription', { plan });
+    const res  = await apiPost('/api/paypal/create-order', { plan });
     const data = await safeJson(res);
     if (!res.ok || !data.approval_url) {
       toast('❌ ' + (data.error || 'Could not start PayPal checkout'), 'err');
-      if (btn) { btn.disabled = false; btn.innerHTML = 'Subscribe'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Pay Now'; }
       return;
     }
     // Remember which plan we're paying for so the /payment/paypal/success
@@ -9425,39 +9430,41 @@ async function continueWithUSD() {
     window.location.href = data.approval_url;
   } catch(e) {
     toast('❌ ' + (e.message || 'Network error starting PayPal checkout'), 'err');
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Subscribe'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Pay Now'; }
   }
 }
 
 // ═══════════════════════════════════════════════════════
 //  PAYPAL RETURN HANDLER (/payment/paypal/success | /cancel)
+//  One-time payment: PayPal appends the order id as ?token=<ORDER_ID>
+//  (NOT ?subscription_id=..., since we no longer create subscriptions).
 // ═══════════════════════════════════════════════════════
 async function _checkPaypalReturn() {
   const path = window.location.pathname;
   if (path !== '/payment/paypal/success' && path !== '/payment/paypal/cancel') return;
 
   const params = new URLSearchParams(window.location.search);
-  const subscriptionId = params.get('subscription_id');
+  const orderId = params.get('token'); // PayPal Orders API redirect param
   const plan = sessionStorage.getItem('_paypal_pending_plan') || '';
   sessionStorage.removeItem('_paypal_pending_plan');
 
   // Clean the URL so a refresh doesn't re-trigger verification
   window.history.replaceState({}, document.title, '/');
 
-  if (path === '/payment/paypal/cancel' || !subscriptionId) {
+  if (path === '/payment/paypal/cancel' || !orderId) {
     toast('PayPal checkout was cancelled.', 'info');
     return;
   }
 
   toast('Verifying your PayPal payment…', 'info', 4000);
   try {
-    const res  = await apiPost('/api/paypal/verify-subscription', { subscription_id: subscriptionId });
+    const res  = await apiPost('/api/paypal/capture-order', { order_id: orderId });
     const data = await safeJson(res);
     if (!res.ok || !data.ok) {
       toast('❌ ' + (data.error || data.message || 'Could not verify PayPal payment'), 'err');
       return;
     }
-    toast('✅ Subscription activated via PayPal!', 'ok', 5000);
+    toast('✅ Plan activated via PayPal! (one-time payment — renews only when you pay again)', 'ok', 5000);
     _applyCandidateSubscription({ plan: data.plan || plan, status: 'active', days_left: data.days, expires_at: data.expires_at });
     if (typeof showCandidateView === 'function') showCandidateView('dashboard');
     if (typeof sidebarSetActive === 'function') sidebarSetActive('analytics', false);
