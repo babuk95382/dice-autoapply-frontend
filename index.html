@@ -838,6 +838,77 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0;}
   color:var(--text3);font-size:13px;
 }
 
+/* Currency Selection Popup (candidate USD/INR checkout) */
+.currency-modal-overlay {
+  display:none;
+  position:fixed;inset:0;z-index:10050;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;padding:16px;
+}
+.currency-modal-overlay.open { display:flex; }
+.currency-modal {
+  background:var(--s1);
+  border:1px solid var(--glass-border-strong);
+  border-radius:var(--r-xl);
+  padding:32px;
+  max-width:460px;width:100%;
+  position:relative;
+  box-shadow:var(--shadow-xl);
+  animation:contactModalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.currency-modal-close {
+  position:absolute;top:14px;right:14px;
+  background:var(--s3);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text2);
+  width:32px;height:32px;cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--transition);
+}
+.currency-modal-close:hover { background:var(--s4);color:var(--text); }
+.currency-modal h2 {
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:800;
+  color:var(--text);margin-bottom:6px;
+}
+.currency-modal .currency-sub { font-size:13.5px;color:var(--text2);margin-bottom:24px; }
+.currency-option {
+  width:100%;text-align:left;
+  background:var(--glass-2);border:1.5px solid var(--glass-border);
+  border-radius:var(--r-lg);padding:18px;margin-bottom:14px;
+  cursor:pointer;transition:var(--transition);
+  backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);
+  display:flex;flex-direction:column;gap:8px;
+  font-family:inherit;color:var(--text);
+}
+.currency-option:hover {
+  border-color:var(--accent);
+  background:var(--glass-1);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-glass);
+}
+.currency-option:focus-visible {
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+.currency-option-head { display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700; }
+.currency-option-flag { font-size:20px;line-height:1; }
+.currency-option-desc { font-size:12px;color:var(--text3);margin-left:30px; }
+.currency-option-methods {
+  margin-left:30px;display:flex;flex-wrap:wrap;gap:6px;
+}
+.currency-chip {
+  font-size:10.5px;font-weight:600;color:var(--text2);
+  background:var(--s3);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;
+}
+.currency-btn-label {
+  margin-left:30px;font-size:13px;font-weight:700;color:var(--accent);
+  display:flex;align-items:center;gap:6px;
+}
+.currency-modal-footer {
+  font-size:11.5px;color:var(--text3);text-align:center;
+  margin-top:6px;line-height:1.5;
+}
+
 </style>
 <style>/* candidate.css */
 /* ══════════════════════════════════════
@@ -1235,7 +1306,7 @@ select option{background:var(--s2);}
 .sub-plan-btn.outline:hover{background:var(--s3);transform:none;}
 
 /* ── Plan cards v2 (current) ── */
-.sub-plans-v2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;padding-top:14px;}
+.sub-plans-v2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;padding-top:14px;}
 .plan-card-v2{
   background:var(--glass-2);border:1px solid var(--glass-border);
   border-radius:var(--r-lg);padding:24px;position:relative;
@@ -5622,8 +5693,8 @@ select option{background:var(--s2);}
             <div class="plan-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M3 3h7l2 4-3 2a10 10 0 0 0 6 6l2-3 4 2v7a1 1 0 0 1-1 1C9 21 3 15 3 4a1 1 0 0 1 1-1z"/></svg></div>
             <div class="plan-name-v2">Growth Plan</div>
             <div class="plan-price-row">
-              <span class="plan-price-currency" id="c-monthly-price-symbol">₹</span>
-              <span class="plan-price-amount" id="c-monthly-price-amount">499</span>
+              <span class="plan-price-currency" id="c-monthly-price-symbol">$</span>
+              <span class="plan-price-amount" id="c-monthly-price-amount">9.99</span>
               <span class="plan-price-period">/ Month</span>
             </div>
             <div class="plan-desc-v2">Full access for active job seekers</div>
@@ -5639,7 +5710,33 @@ select option{background:var(--s2);}
             </ul>
             <button class="plan-btn-v2" id="c-monthly-btn" onclick="activatePlan('self_monthly')">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5a5 5 0 100 10 5 5 0 000-10zM6.5 4v3l2 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-              Subscribe — ₹499/mo
+              Subscribe — $9.99/mo
+            </button>
+          </div>
+
+          <!-- Candidate Quarterly -->
+          <div class="plan-card-v2">
+            <div class="plan-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="plan-name-v2">Quarterly Plan</div>
+            <div class="plan-price-row">
+              <span class="plan-price-currency">$</span>
+              <span class="plan-price-amount">24.99</span>
+              <span class="plan-price-period">/ 3 Months</span>
+            </div>
+            <div class="plan-desc-v2">Best value — save vs. paying monthly</div>
+            <ul class="plan-features-v2">
+              <li><span class="plan-feat-check">✓</span>90-day full platform access</li>
+              <li><span class="plan-feat-check">✓</span>Auto apply jobs on Dice, Collabera &amp; Inspyr Solutions</li>
+              <li><span class="plan-feat-check">✓</span>Automatic Dice applications at 9 AM &amp; 1 PM EST daily</li>
+              <li><span class="plan-feat-check">✓</span>Automatic Collabera &amp; Inspyr Solutions applications at 2 PM EST daily</li>
+              <li><span class="plan-feat-check">✓</span>No manual job applications required until subscription expires</li>
+              <li><span class="plan-feat-check">✓</span>Technology-based smart job matching</li>
+              <li><span class="plan-feat-check">✓</span>Success &amp; failed application tracking dashboard</li>
+              <li><span class="plan-feat-check">✓</span>Priority support</li>
+            </ul>
+            <button class="plan-btn-v2" id="c-quarterly-btn" onclick="activatePlan('candidate_quarterly')">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5a5 5 0 100 10 5 5 0 000-10zM6.5 4v3l2 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Subscribe — $24.99/3mo
             </button>
           </div>
         </div>
@@ -7725,31 +7822,8 @@ select option{background:var(--s2);}
 // Flask serves both the frontend (index.html) AND the API from the same server.
 // So the API is always on the same origin as the page — no port needed.
 // Only override this if your frontend and backend run on DIFFERENT servers.
-const API_BASE = "https://futurehiretech-backend.onrender.com";
-const _netErrMsg = '❌ Cannot connect to the server';
-
-// ── Cross-origin token storage ──────────────────────────────────
-// Because the backend (onrender.com) and frontend (vercel.app) are on
-// different origins, the browser blocks cross-origin cookies even with
-// SameSite=None when the domains differ at the eTLD+1 level.
-// We store the JWT access token in sessionStorage and send it via the
-// Authorization: Bearer header, which always works cross-origin.
-// The refresh token is stored in sessionStorage as well so the silent
-// refresh flow works after a page reload.
-const _TOKEN_KEY   = 'fht_access_token';
-const _REFRESH_KEY = 'fht_refresh_token';
-
-function _storeTokens(accessToken, refreshToken) {
-  try {
-    if (accessToken)  sessionStorage.setItem(_TOKEN_KEY,   accessToken);
-    if (refreshToken) sessionStorage.setItem(_REFRESH_KEY, refreshToken);
-  } catch(e) {}
-}
-function _getAccessToken()  { try { return sessionStorage.getItem(_TOKEN_KEY)  || ''; } catch(e) { return ''; } }
-function _getRefreshToken() { try { return sessionStorage.getItem(_REFRESH_KEY) || ''; } catch(e) { return ''; } }
-function _clearTokens() {
-  try { sessionStorage.removeItem(_TOKEN_KEY); sessionStorage.removeItem(_REFRESH_KEY); } catch(e) {}
-}
+const API_BASE = "https://api.futurehiretech.com";
+const _netErrMsg = '❌ Cannot connect to the server. Make sure your Flask backend (app.py) is running.';
 
 let currentTab = 'candidate';
 let selfTags = [];
@@ -7774,8 +7848,6 @@ function _clearAllAuthStorage() {
   // Clear any localStorage auth/role keys used by this app
   const lsKeysToRemove = ['rc_pw', 'rco_pw', 'rin_pw'];
   lsKeysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
-  // Clear stored JWT tokens (cross-origin Bearer auth)
-  _clearTokens();
   // Do NOT clear theme preference — that's not auth-related
   // Reset in-memory auth state
   authState.candidate = { loggedIn: false, user: null, plan: null };
@@ -7801,41 +7873,28 @@ async function _restoreSessionOnLoad() {
     // new one on page load so we must sync before any POST/GET with auth)
     await _initCsrfToken();
 
-    // Step 2: Try /api/auth/me using stored Bearer token (primary cross-origin method)
-    // or HTTP-only cookie (works if same origin). Bearer token is preferred because
-    // cookies are blocked cross-origin (vercel.app → onrender.com).
-    const storedToken = _getAccessToken();
-    const bearerHeader = storedToken ? { 'Authorization': 'Bearer ' + storedToken } : {};
+    // Step 2: Try /api/auth/me directly — works if the access_token cookie
+    // is still valid (i.e. refreshed within the last 15 minutes)
     let meRes = await fetch(API_BASE + '/api/auth/me', {
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCsrfToken(), ...bearerHeader }
+      headers: { 'X-CSRF-Token': getCsrfToken() }
     });
 
-    // Step 3: If access token expired/missing (401), rotate via refresh token
+    // Step 3: If access token expired (401), rotate via refresh token
     if (meRes.status === 401) {
-      const storedRefresh = _getRefreshToken();
       const refreshRes = await fetch(API_BASE + '/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: storedRefresh || undefined })
+        headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' }
       });
-      if (!refreshRes.ok) { _clearTokens(); return; } // No valid refresh token
-
-      // Store new access token from refresh response
-      try {
-        const rd = await refreshRes.json();
-        if (rd.access_token) _storeTokens(rd.access_token, null);
-      } catch(e) {}
+      if (!refreshRes.ok) return; // No valid refresh token — stay on landing
 
       // Refresh rotated the session; get a fresh CSRF for the new token
       await _initCsrfToken();
 
-      const newToken = _getAccessToken();
-      const newBearerHeader = newToken ? { 'Authorization': 'Bearer ' + newToken } : {};
       meRes = await fetch(API_BASE + '/api/auth/me', {
         credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken(), ...newBearerHeader }
+        headers: { 'X-CSRF-Token': getCsrfToken() }
       });
     }
 
@@ -7921,7 +7980,7 @@ function _removeAuthShield() {
 
 // Run session restore after DOM is ready and all JS is initialized
 document.addEventListener('DOMContentLoaded', () => {
-  _restoreSessionOnLoad().finally(_removeAuthShield);
+  _restoreSessionOnLoad().finally(() => { _removeAuthShield(); _checkPaypalReturn(); });
 });
 
 // In-memory platform password — restored from DB on login
@@ -7985,26 +8044,15 @@ async function _tryRefreshToken() {
   }
   _refreshing = true;
   try {
-    // Send the refresh token in the JSON body (cross-origin cookie fallback).
-    // The server also accepts the cookie if it made it through, so this is
-    // fully backward-compatible.
-    const refreshToken = _getRefreshToken();
     const r = await fetch(API_BASE + '/api/auth/refresh', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'X-CSRF-Token': getCsrfToken(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken || undefined })
+      headers: { 'X-CSRF-Token': getCsrfToken() }
     });
     const ok = r.ok;
-    if (ok) {
-      // Store the new access token from the response body
-      try {
-        const data = await r.json();
-        if (data.access_token) _storeTokens(data.access_token, null);
-      } catch(e) {}
-      // Re-sync CSRF token after rotation
-      await _initCsrfToken();
-    }
+    // IMPORTANT: After token rotation the server issues a new CSRF token.
+    // Re-sync it so subsequent requests don't get CSRF-rejected.
+    if (ok) await _initCsrfToken();
     _refreshQueue.forEach(resolve => resolve(ok));
     _refreshQueue = [];
     return ok;
@@ -8043,13 +8091,9 @@ async function apiFetch(url, opts = {}, _retry = true) {
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     await _initCsrfToken();
   }
-  // Always attach the JWT via Authorization header — this is the reliable
-  // cross-origin auth mechanism (cookie domain mismatch breaks cookies).
-  const token = _getAccessToken();
-  const authHeader = token ? { 'Authorization': 'Bearer ' + token } : {};
   const res = await fetch(API_BASE + url, {
     credentials: 'include', ...opts,
-    headers: { 'X-CSRF-Token': getCsrfToken(), ...authHeader, ...(opts.headers || {}) }
+    headers: { 'X-CSRF-Token': getCsrfToken(), ...(opts.headers || {}) }
   });
   if (res.status === 401 && _retry) {
     const refreshed = await _tryRefreshToken();
@@ -8483,9 +8527,6 @@ async function candidateLogin() {
     const res  = await apiPost('/api/auth/candidate/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
-    // Store JWT tokens for cross-origin Bearer auth (cookies are blocked cross-origin)
-    if (data.access_token)  _storeTokens(data.access_token, null);
-    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
@@ -8592,7 +8633,6 @@ async function candidateVerifyOtp() {
     const res  = await apiPost('/api/auth/candidate/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
-    if (data.access_token) _storeTokens(data.access_token, null);
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -8646,7 +8686,7 @@ function _applyCandidateSubscription(sub) {
   const days    = sub.days_left ?? (sub.plan === 'trial' ? 2 : 30);
   const expired = days <= 0;
   const isTrial = sub.plan === 'trial';
-  const planLabels = { trial: 'Free Trial', self_monthly: 'Self-Candidate Monthly', pro: 'Pro Plan' };
+  const planLabels = { trial: 'Free Trial', self_monthly: 'Self-Candidate Monthly', candidate_monthly: 'Growth Plan (Monthly)', candidate_quarterly: 'Quarterly Plan', pro: 'Pro Plan' };
   const label = planLabels[sub.plan] || 'Pro Plan';
   const subCard    = document.getElementById('c-active-sub-card');
   const expiredBan = document.getElementById('c-expired-banner');
@@ -8762,9 +8802,6 @@ async function recruiterLogin() {
     const res  = await apiPost('/api/auth/recruiter/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Login failed'), 'err'); return; }
-    // Store JWT tokens for cross-origin Bearer auth
-    if (data.access_token)  _storeTokens(data.access_token, null);
-    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
@@ -8842,7 +8879,6 @@ async function recruiterVerifyOtp() {
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name:fname, last_name:lname, email, phone, password:pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
-    if (data.access_token) _storeTokens(data.access_token, null);
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
@@ -9001,9 +9037,6 @@ async function adminLogin() {
     const res  = await apiPost('/api/auth/admin/login', { email, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Invalid credentials'), 'err'); return; }
-    // Store JWT tokens for cross-origin Bearer auth
-    if (data.access_token)  _storeTokens(data.access_token, null);
-    if (data.refresh_token) _storeTokens(null, data.refresh_token);
     await _initCsrfToken();
     authState.admin.loggedIn = true;
     document.getElementById('a-auth-login').style.display = 'none';
@@ -9128,7 +9161,7 @@ function _updateLockedEmailDisplay(lockedEmail) {
 async function loadCandidateDetailsFromDB(userId) {
   if (!userId) return;
   try {
-    const res  = await apiFetch('/api/candidate/details');
+    const res  = await fetch(`${API_BASE}/api/candidate/details`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     const data = await safeJson(res);
     if (res.ok && data.found && data.details) {
       const d = data.details;
@@ -9212,11 +9245,11 @@ function renderInsJobTitles() {
 async function activatePlan(plan) {
   const user = authState.candidate.user;
   if (!user) return;
-  const btnMap = { trial: 'c-trial-btn', self_monthly: 'c-monthly-btn', pro: 'c-monthly-btn' };
+  const btnMap = { trial: 'c-trial-btn', self_monthly: 'c-monthly-btn', candidate_monthly: 'c-monthly-btn', candidate_quarterly: 'c-quarterly-btn', pro: 'c-monthly-btn' };
   const btnId  = btnMap[plan] || 'c-monthly-btn';
   const btn    = document.getElementById(btnId);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Processing…'; }
   if (plan === 'trial') {
+    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Processing…'; }
     try {
       const res  = await apiPost('/api/subscription/create-order', { plan:'trial' });
       const data = await safeJson(res);
@@ -9230,8 +9263,9 @@ async function activatePlan(plan) {
       if (btn) { btn.disabled = false; btn.innerHTML = 'Start Free Trial'; }
     }
   } else {
-    await openCashfree('candidate', plan, user);
-    if (btn) { btn.disabled = false; }
+    // Paid candidate plan → show the currency selection popup instead of
+    // going straight to Cashfree. Recruiter flow is untouched.
+    openCurrencyPopup(plan, user);
   }
 }
 
@@ -9322,6 +9356,116 @@ async function openCashfree(userType, planKey, user) {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+//  CURRENCY SELECTION POPUP (candidate section only)
+// ═══════════════════════════════════════════════════════
+let _currencyPopupPlan = null;
+let _currencyPopupUser = null;
+
+const _PLAN_LABELS_USD = { self_monthly: '$9.99/mo', candidate_monthly: '$9.99/mo', candidate_quarterly: '$24.99/3mo' };
+const _PLAN_LABELS_INR = { self_monthly: '₹499/mo', candidate_monthly: '₹499/mo', candidate_quarterly: '₹1,299/3mo' };
+
+function openCurrencyPopup(plan, user) {
+  _currencyPopupPlan = plan;
+  _currencyPopupUser = user;
+  const modal = document.getElementById('currency-popup');
+  if (!modal) return;
+  const inrBtn = document.getElementById('currency-btn-inr');
+  const usdBtn = document.getElementById('currency-btn-usd');
+  if (inrBtn) inrBtn.querySelector('.currency-btn-label').textContent = 'Continue with INR — ' + (_PLAN_LABELS_INR[plan] || '');
+  if (usdBtn) usdBtn.querySelector('.currency-btn-label').textContent = 'Continue with USD — ' + (_PLAN_LABELS_USD[plan] || '');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const firstFocusable = modal.querySelector('button');
+  if (firstFocusable) firstFocusable.focus();
+  document.addEventListener('keydown', _currencyPopupKeyHandler);
+}
+
+function closeCurrencyPopup() {
+  const modal = document.getElementById('currency-popup');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+  document.removeEventListener('keydown', _currencyPopupKeyHandler);
+}
+
+function _currencyPopupKeyHandler(e) {
+  if (e.key === 'Escape') closeCurrencyPopup();
+}
+
+async function continueWithINR() {
+  const plan = _currencyPopupPlan, user = _currencyPopupUser;
+  closeCurrencyPopup();
+  if (!plan || !user) return;
+  const btnMap = { self_monthly: 'c-monthly-btn', candidate_monthly: 'c-monthly-btn', candidate_quarterly: 'c-quarterly-btn' };
+  const btn = document.getElementById(btnMap[plan]);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Processing…'; }
+  await openCashfree('candidate', plan, user);
+  if (btn) { btn.disabled = false; }
+}
+
+async function continueWithUSD() {
+  const plan = _currencyPopupPlan;
+  closeCurrencyPopup();
+  if (!plan) return;
+  const btnMap = { self_monthly: 'c-monthly-btn', candidate_monthly: 'c-monthly-btn', candidate_quarterly: 'c-quarterly-btn' };
+  const btn = document.getElementById(btnMap[plan]);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Redirecting to PayPal…'; }
+  try {
+    const res  = await apiPost('/api/paypal/create-subscription', { plan });
+    const data = await safeJson(res);
+    if (!res.ok || !data.approval_url) {
+      toast('❌ ' + (data.error || 'Could not start PayPal checkout'), 'err');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Subscribe'; }
+      return;
+    }
+    // Remember which plan we're paying for so the /payment/paypal/success
+    // handler can restore UI state even after a full page redirect.
+    sessionStorage.setItem('_paypal_pending_plan', plan);
+    window.location.href = data.approval_url;
+  } catch(e) {
+    toast('❌ ' + (e.message || 'Network error starting PayPal checkout'), 'err');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Subscribe'; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAYPAL RETURN HANDLER (/payment/paypal/success | /cancel)
+// ═══════════════════════════════════════════════════════
+async function _checkPaypalReturn() {
+  const path = window.location.pathname;
+  if (path !== '/payment/paypal/success' && path !== '/payment/paypal/cancel') return;
+
+  const params = new URLSearchParams(window.location.search);
+  const subscriptionId = params.get('subscription_id');
+  const plan = sessionStorage.getItem('_paypal_pending_plan') || '';
+  sessionStorage.removeItem('_paypal_pending_plan');
+
+  // Clean the URL so a refresh doesn't re-trigger verification
+  window.history.replaceState({}, document.title, '/');
+
+  if (path === '/payment/paypal/cancel' || !subscriptionId) {
+    toast('PayPal checkout was cancelled.', 'info');
+    return;
+  }
+
+  toast('Verifying your PayPal payment…', 'info', 4000);
+  try {
+    const res  = await apiPost('/api/paypal/verify-subscription', { subscription_id: subscriptionId });
+    const data = await safeJson(res);
+    if (!res.ok || !data.ok) {
+      toast('❌ ' + (data.error || data.message || 'Could not verify PayPal payment'), 'err');
+      return;
+    }
+    toast('✅ Subscription activated via PayPal!', 'ok', 5000);
+    _applyCandidateSubscription({ plan: data.plan || plan, status: 'active', days_left: data.days, expires_at: data.expires_at });
+    if (typeof showCandidateView === 'function') showCandidateView('dashboard');
+    if (typeof sidebarSetActive === 'function') sidebarSetActive('analytics', false);
+  } catch(e) {
+    toast('❌ Network error verifying PayPal payment.', 'err');
+  }
+}
+
 </script>
 <script>/* recruiter.js */
 'use strict';
@@ -9405,7 +9549,7 @@ async function loadRecruiterCandidates() {
   const tbody = document.getElementById('rc-saved-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="rc-empty"><div class="skeleton-line skeleton" style="width:60%;margin:0 auto 8px"></div></td></tr>';
   try {
-    const res  = await apiFetch('/api/recruiter/candidates');
+    const res  = await fetch(`${API_BASE}/api/recruiter/candidates`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } });
     const data = await safeJson(res);
     if (!res.ok || !data.ok) { renderRcTable(); return; }
     rcCandidates = data.candidates || [];
@@ -9571,9 +9715,10 @@ async function saveRcCandidate() {
   try {
     let res;
     if (rcEditingId) {
-      res = await apiFetch(`/api/recruiter/candidates/${rcEditingId}`, {
+      res = await fetch(`${API_BASE}/api/recruiter/candidates/${rcEditingId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        credentials: 'include',
         body: JSON.stringify(body),
       });
     } else {
@@ -12205,7 +12350,6 @@ async function cSuSubmitSignup() {
     const res  = await apiPost('/api/auth/candidate/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
-    if (data.access_token) _storeTokens(data.access_token, null);
     authState.candidate.loggedIn = true;
     authState.candidate.user     = data.user;
     _applyCandidateDashboard(data.user);
@@ -12367,7 +12511,6 @@ async function rSuSubmitSignup() {
     const res  = await apiPost('/api/auth/recruiter/signup', { first_name: fname, last_name: lname, email, phone, password: pass });
     const data = await safeJson(res);
     if (!res.ok) { showMsg(msg, '❌ ' + (data.error || 'Account creation failed'), 'err'); return; }
-    if (data.access_token) _storeTokens(data.access_token, null);
     authState.recruiter.loggedIn = true;
     authState.recruiter.user     = data.user;
     document.getElementById('r-dash-name').textContent   = data.user.name;
@@ -12921,6 +13064,36 @@ async function saveResume() {
       Futurehire Technologies — Remote - Team<br>
       <span style="font-size:11px;margin-top:4px;display:block;">For on-site inquiries, please contact us via email first.</span>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ CURRENCY SELECTION POPUP ══════════════════════════════════════ -->
+<div id="currency-popup" class="currency-modal-overlay" onclick="if(event.target===this)closeCurrencyPopup()">
+  <div class="currency-modal" role="dialog" aria-modal="true" aria-labelledby="currency-modal-title">
+    <button class="currency-modal-close" onclick="closeCurrencyPopup()" aria-label="Close">×</button>
+    <h2 id="currency-modal-title">Choose Your Payment Currency</h2>
+    <p class="currency-sub">Select your preferred payment method.</p>
+
+    <button type="button" class="currency-option" id="currency-btn-inr" onclick="continueWithINR()">
+      <span class="currency-option-head"><span class="currency-option-flag">🇮🇳</span> Indian Rupee (INR)</span>
+      <span class="currency-option-desc">Recommended for customers paying in India.</span>
+      <span class="currency-option-methods">
+        <span class="currency-chip">UPI</span>
+        <span class="currency-chip">Credit Card</span>
+        <span class="currency-chip">Debit Card</span>
+        <span class="currency-chip">Net Banking</span>
+        <span class="currency-chip">Wallets</span>
+      </span>
+      <span class="currency-btn-label">Continue with INR <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l5 4-5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+
+    <button type="button" class="currency-option" id="currency-btn-usd" onclick="continueWithUSD()">
+      <span class="currency-option-head"><span class="currency-option-flag">🌍</span> US Dollar (USD)</span>
+      <span class="currency-option-desc">Recommended for international customers.</span>
+      <span class="currency-btn-label">Continue with USD <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 2l5 4-5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+
+    <div class="currency-modal-footer">Your subscription will be activated immediately after successful payment.</div>
   </div>
 </div>
 
